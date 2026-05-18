@@ -9,7 +9,7 @@ const payload = orderToken ? verifyOrderToken(orderToken) : null;
 
 // Preview bypass: `?preview=1` skips the token check so you can view the page
 // without going through a real Stripe checkout. Only honored in local dev.
-const isPreview = Astro.url.searchParams.get('preview') === '1' && import.meta.env.DEV;
+const isPreview = Astro.url.searchParams.get('preview') === '1' && (import.meta.env.DEV || import.meta.env.ALLOW_PREVIEW_BYPASS === '1');
 
 const downsellName = import.meta.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
 const downsellAmountCents = Number(import.meta.env.PRODUCT_DOWNSELL_AMOUNT_CENTS || 2700);
