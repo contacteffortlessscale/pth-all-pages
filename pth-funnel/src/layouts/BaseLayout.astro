@@ -1,0 +1,38 @@
+---
+import '../styles/global.css';
+const { title = 'Part-Time Hypnotist', description = 'Become A Part-Time Hypnotist Using The Exact System That Generates Us $3-5K/month Working Just ONE Afternoon A Week' } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content="/images/37-meta-og-share-image-FLAG.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body class="bg-white text-slate-900 antialiased">
+  <header class="bg-pth-purple text-white py-4 md:py-5 px-4">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-6">
+      <img src="/images/01-hero-logo-tagline.png" alt="Dan Candell — Hypnotist, Speaker, Author" class="h-14 md:h-16 lg:h-20 w-auto" />
+      <div class="text-right text-xs md:text-sm italic leading-relaxed">
+        <a href="mailto:support@theparttimehypnotist.com" class="underline font-bold">Need Help?</a> Contact us at<br />
+        <a href="mailto:support@theparttimehypnotist.com" class="hover:underline">support@theparttimehypnotist.com</a>
+      </div>
+    </div>
+  </header>
+  <slot />
+  <footer class="bg-slate-900 text-slate-400 py-10 px-4 text-center text-sm">
+    <div class="max-w-3xl mx-auto space-y-2">
+      <p>© Copyright 2026 Dan Candell. <a href="https://dancandell.com" class="hover:text-white">Dancandell.com</a></p>
+      <p><a href="/terms" class="hover:text-white">Terms Of Service</a> | <a href="/privacy" class="hover:text-white">Privacy Policy</a></p>
+      <p>Need Help? Contact us at <a href="mailto:support@theparttimehypnotist.com" class="hover:text-white">support@theparttimehypnotist.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

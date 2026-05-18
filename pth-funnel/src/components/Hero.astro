@@ -1,0 +1,65 @@
+---
+const checkoutUrl = import.meta.env.PUBLIC_CHECKOUT_URL || '#TODO-checkout-url';
+const showVslPlaceholder = !import.meta.env.PUBLIC_VSL_LIVE;
+---
+<section class="relative text-white overflow-hidden">
+  <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/images/02-hero-bg.png');"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-pth-purple/50 via-slate-900/70 to-slate-900/90"></div>
+
+  <div class="relative max-w-5xl mx-auto px-4 py-10 md:py-16 text-center">
+    <img src="/images/03-hero-trust-badge.png" alt="Trusted by 13,521 clients over 20+ years" class="mx-auto mb-5 max-w-sm md:max-w-md w-full" />
+
+    <p class="italic text-base md:text-lg mb-5 text-slate-200">
+      "For coaches, therapists, healers, and anyone looking for a new career they love…"
+    </p>
+
+    <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase leading-[1.15] mb-5 max-w-5xl mx-auto">
+      Become A <span class="text-pth-blue">Part-Time Hypnotist</span> Using The Exact System That Generates Us <span class="text-pth-blue">$3-5K/Month</span>
+      <em class="not-italic block mt-2">Working Just ONE Afternoon A Week</em>
+    </h1>
+
+    <p class="text-sm md:text-lg text-slate-200 mb-8 max-w-3xl mx-auto">
+      This Works Even If You're Starting With Zero Hypnosis Or Coaching Experience
+    </p>
+
+    <div class="relative max-w-3xl mx-auto aspect-video bg-black rounded-lg shadow-2xl overflow-hidden group">
+      {showVslPlaceholder ? (
+        <button type="button" class="absolute inset-0 w-full h-full bg-center bg-cover flex items-center justify-center" style="background-image: url('/images/04-vsl-poster.jpg');" aria-label="Play VSL" data-cta-checkout>
+          <span class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></span>
+          <span class="relative flex items-center justify-center w-20 h-20 rounded-full bg-pth-orange/90 group-hover:bg-pth-orange transition-colors shadow-2xl">
+            <svg viewBox="0 0 24 24" class="w-9 h-9 text-white ml-1" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+        </button>
+      ) : (
+        <video controls poster="/images/04-vsl-poster.jpg" class="w-full h-full" preload="metadata">
+          <source src="/PTH-FE-VSL.mp4" type="video/mp4" />
+        </video>
+      )}
+    </div>
+
+    {/* Offer-stack composite + CTA card — image bleeds out of card on the left */}
+    <div class="relative mt-12 max-w-2xl mx-auto rounded-xl p-5 md:p-6 shadow-2xl" style="background: radial-gradient(circle at 20% 50%, #4aa9ff 0%, #1a6fc8 70%, #0d4d96 100%);">
+      <div class="grid grid-cols-[40%_1fr] items-center gap-3 md:gap-5">
+        <div class="-ml-8 md:-ml-14">
+          <img src="/images/05-hero-offer-stack-composite.png" alt="Part-Time Hypnotist offer stack" class="w-full drop-shadow-2xl" />
+        </div>
+        <div class="text-center md:text-left">
+          <a href={checkoutUrl} class="inline-block w-full bg-pth-orange hover:bg-pth-orange-dark text-white font-bold text-base md:text-lg px-4 py-3 rounded-md shadow-lg transition-colors mb-3" data-cta-checkout>Secure Your Spot Now!</a>
+          <p class="text-xs md:text-sm text-white font-bold leading-tight">Join PTH &amp; Master Hypnosis To Help Your Family &amp; Clients</p>
+          <p class="mt-1 text-white/95 font-bold text-sm md:text-base">PLUS 5 Free Bonuses!</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Liz V featured testimonial with headshot — floating, no card border */}
+    <div class="mt-12 max-w-2xl mx-auto flex items-center gap-4 md:gap-6 text-left">
+      <img src="/images/19-proof-headshot-bridge.png" alt="Liz V" class="w-20 h-20 md:w-28 md:h-28 rounded-full flex-shrink-0 border-4 border-pth-blue" />
+      <div>
+        <p class="italic text-base md:text-lg text-white leading-snug font-medium">
+          "I started with the goal of seeing a few clients on the side. Within months, I had completely replaced my 9-5 income."
+        </p>
+        <p class="mt-2 text-white text-sm">— Liz V <span class="text-yellow-400 ml-1">★★★★★</span></p>
+      </div>
+    </div>
+  </div>
+</section>

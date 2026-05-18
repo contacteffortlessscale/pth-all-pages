@@ -1,0 +1,80 @@
+---
+// Two-step opt-in popup. Triggered by any element with [data-cta-checkout].
+// Submits to /api/optin which forwards to the GHL inbound webhook,
+// then redirects the user to PUBLIC_CHECKOUT_URL (the custom Vercel checkout)
+// with email + first_name pre-filled via query params.
+const checkoutUrl = import.meta.env.PUBLIC_CHECKOUT_URL || '/checkout';
+---
+<div id="pth-popup" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur" role="dialog" aria-modal="true" aria-labelledby="pth-popup-title">
+  <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <button id="pth-popup-close" type="button" class="absolute top-3 right-3 text-slate-400 hover:text-slate-900 text-2xl leading-none p-2" aria-label="Close popup">×</button>
+
+    <div class="p-6 md:p-8">
+      <p class="text-pth-blue font-bold text-base md:text-lg leading-tight mb-2">
+        🧠 Start a new career as a "healer" and earn more money <span class="underline">doing something you love</span>!
+      </p>
+
+      <img src="/images/26-proof-case-study-tree.png" alt="Real graduate testimonial" class="rounded-lg w-full my-4" />
+
+      <form id="pth-optin-form" class="space-y-3" novalidate>
+        <input type="text" name="first_name" required placeholder="Your first name here…*" class="w-full px-4 py-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pth-blue" />
+        <input type="email" name="email" required placeholder="Your favorite email here…*" class="w-full px-4 py-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pth-blue" />
+        <button type="submit" class="w-full bg-pth-blue hover:bg-pth-blue-dark text-white font-bold py-4 rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+          <span data-label-idle>Proceed to Step #2 »</span>
+          <span data-label-busy class="hidden">Submitting…</span>
+        </button>
+        <p data-error class="hidden text-pth-red text-sm text-center"></p>
+      </form>
+
+      <p class="text-xs text-slate-500 text-center mt-4">We respect your privacy. No spam — just the training.</p>
+    </div>
+  </div>
+</div>
+
+<script is:inline define:vars={{ checkoutUrl }}>
+(function () {
+  const popup = document.getElementById('pth-popup');
+  const closeBtn = document.getElementById('pth-popup-close');
+  const form = document.getElementById('pth-optin-form');
+  if (!popup || !form) return;
+
+  const show = () => { popup.classList.remove('hidden'); popup.classList.add('flex'); document.body.style.overflow = 'hidden'; };
+  const hide = () => { popup.classList.add('hidden'); popup.classList.remove('flex'); document.body.style.overflow = ''; };
+
+  // Intercept every CTA click and open the popup instead of going straight to checkout.
+  document.querySelectorAll('[data-cta-checkout]').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); show(); });
+  });
+
+  closeBtn?.addEventListener('click', hide);
+  popup.addEventListener('click', e => { if (e.target === popup) hide(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = { first_name: String(fd.get('first_name') || '').trim(), email: String(fd.get('email') || '').trim() };
+    const idle = form.querySelector('[data-label-idle]');
+    const busy = form.querySelector('[data-label-busy]');
+    const err = form.querySelector('[data-error]');
+    const btn = form.querySelector('button[type="submit"]');
+    err.classList.add('hidden'); err.textContent = '';
+
+    if (!payload.first_name || !payload.email) { err.textContent = 'Please fill in both fields.'; err.classList.remove('hidden'); return; }
+
+    btn.disabled = true; idle.classList.add('hidden'); busy.classList.remove('hidden');
+    try {
+      const r = await fetch('/api/optin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || `Request failed (${r.status})`);
+      }
+      // Step #2: redirect to the custom Vercel checkout with email + name prefilled.
+      const url = new URL(checkoutUrl, window.location.origin);
+      url.searchParams.set('email', payload.email);
+      url.searchParams.set('first_name', payload.first_name);
+      window.location.href = url.toString();
+    } catch (e2) {
+      err.textContent = e2.message || 'Something went wrong. Please try again.';
+      err.classList.remove('hidden');
+      btn.disabled = false; idle.classList.r

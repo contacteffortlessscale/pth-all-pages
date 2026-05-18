@@ -1,0 +1,61 @@
+---
+import CtaBlock from './CtaBlock.astro';
+const faqs = [
+  {
+    q: 'Will this work even if I have zero hypnosis experience?',
+    a: 'The Part-Time Hypnotist framework has been tested in the real world with complete beginners, therapists, coaches, massage therapists, Reiki practitioners, and everyone in between. And it not only works for all of them, it flat out delivers faster client results than most traditional coaching certifications that take 6-12 months to complete. PTH is not about memorizing 200 pages of scripts — it is a proven system of 6 "rapid relief" tools that can be applied to most clients most of the time.',
+  },
+  {
+    q: 'I want this — what exactly am I getting?',
+    a: 'When you order today, you\'re also getting 3 exclusive bonuses designed to help you get your first paying client as fast as possible: Bonus #1 The Instant Client Campaign (the copy-paste Facebook post template that\'s generated 200+ client inquiries), Bonus #2 The Rapid Induction Formula Ebook (Dan\'s secret weapon for getting clients into a hypnotic state in under 60 seconds), and Bonus #3 The First Session Script Bundle (fill-in-the-blank scripts walking you through your first 3 sessions). Plus instant access to the entire training and all bonuses.',
+  },
+  {
+    q: 'Who is this for?',
+    a: 'The Part-Time Hypnotist is for any coach, therapist, healer, or aspiring practitioner who wants to build a profitable practice that doesn\'t require 60+ hour workweeks, constant content posting, or seeing 30 clients just to pay the bills. If you\'re happy working your current hours for your current income and don\'t want to learn a more profitable, time-efficient way to help clients… then this training is not for you.',
+  },
+  {
+    q: 'What is The Part-Time Hypnotist?',
+    a: 'The Part-Time Hypnotist is a step-by-step system that teaches you 6 "rapid relief" hypnotic tools so you can deliver fast client transformations, plus the systems you need to build a client-facing hypnosis practice. We focus on the tools that work for most people most of the time — which eliminates years of complicated training and gets you working with paying clients in weeks instead of months.',
+  },
+  {
+    q: 'How is this different than other hypnosis trainings?',
+    a: 'The Part-Time Hypnotist focuses on 6 specific "rapid relief" tools that deliver the fastest client transformations — while also teaching you the exact business model to attract clients and sell premium packages. While other trainings dump 200 pages of scripts on you with no clear path to making money, with PTH you can start using these tools straight away if you\'re already seeing clients, or join our certification program to go deeper.',
+  },
+  {
+    q: 'How long will it take to complete the training?',
+    a: 'The entire Part-Time Hypnotist mini-course is 2 hours long and designed to be completed over a weekend whenever you have time to spare. You get instant access immediately upon order so you can start learning today while you\'re still motivated.',
+  },
+  {
+    q: 'Is there a guarantee?',
+    a: 'Yes. We\'re looking for dedicated practitioners who are serious about building a new income stream doing work they actually love. Anyone who practices just ONE of these tools ends up seeing real results. Which is why we put together the Part-Time Hypnotist 30 Day Money Back Guarantee. If you grab the course, go through the training, try it out, and for whatever reason you feel like it didn\'t help you at all — just email support and we\'ll refund every penny, and let you keep access to the entire course and all the bonuses as our way of saying thank you for betting on yourself.',
+  },
+];
+---
+<section class="section bg-white">
+  <div class="section-narrow">
+    <h2 class="text-3xl md:text-5xl font-extrabold text-center mb-12">
+      Frequently Asked <span class="text-pth-blue">Questions</span>
+    </h2>
+    <div class="space-y-4">
+      {faqs.map(f => (
+        <details class="group bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+          <summary class="cursor-pointer list-none px-6 py-5 flex items-center justify-between hover:bg-slate-100 transition-colors">
+            <h3 class="font-bold text-base md:text-lg text-slate-900 pr-4">{f.q}</h3>
+            <span class="text-pth-blue text-2xl flex-shrink-0 group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <div class="px-6 pb-6 text-slate-700 text-base leading-relaxed">{f.a}</div>
+        </details>
+      ))}
+    </div>
+    <CtaBlock />
+  </div>
+</section>
+
+<section class="py-12 px-4 bg-pth-purple text-white text-center">
+  <div class="section-narrow">
+    <h2 class="text-2xl md:text-3xl font-extrabold mb-4">Secure Your Spot Now!</h2>
+    <p class="text-slate-200 mb-2">Join PTH & Master Hypnosis To Help Your Family & Clients</p>
+    <p class="text-pth-orange font-semibold mb-6">PLUS 5 Free Bonuses!</p>
+    <a href={import.meta.env.PUBLIC_CHECKOUT_URL || '#TODO-checkout-url'} class="cta-btn-lg" data-cta-checkout>Discover Hypnosis Today →</a>
+  </div>
+</section>

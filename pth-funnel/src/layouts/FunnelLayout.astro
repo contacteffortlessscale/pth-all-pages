@@ -1,0 +1,77 @@
+---
+// Funnel layout used by /checkout, /upsell, /downsell, /thank-you.
+//
+// Defaults to LIGHT mode per project instruction (no white text on dark
+// backgrounds). Pass `mode="dark"` to opt into the dark theme on a specific
+// page — currently only /checkout still uses dark mode until it's restyled.
+import '../styles/pth-design.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  mode?: 'light' | 'dark';
+}
+
+const {
+  title = 'The Part-Time Hypnotist',
+  description = 'Secure checkout · The Part-Time Hypnotist',
+  mode = 'light',
+} = Astro.props;
+
+const isLight = mode === 'light';
+
+// Pick a logo PNG that has the right contrast for the surface.
+//  - "primary-light" = light-colored logo, designed to sit on a DARK page
+//  - "primary-dark"  = dark-colored logo, designed to sit on a LIGHT page
+const logoSrc = isLight ? '/brand/pth-logo-primary-dark.png' : '/brand/pth-logo-primary-light.png';
+
+// Tailwind classes per mode.
+const bodyClass = isLight
+  ? 'pth light bg-pth-light-bg text-pth-text-on-light font-body'
+  : 'pth bg-pth-ink text-pth-body-on-dark font-body';
+
+const headerBorder = isLight ? 'border-pth-rule-on-light' : 'border-pth-rule-on-dark/60';
+const footerBorder = isLight ? 'border-pth-rule-on-light' : 'border-pth-rule-on-dark/60';
+const helpStrong   = isLight ? 'text-pth-text-on-light' : 'text-pth-paper';
+const muted        = isLight ? 'text-pth-muted-on-light' : 'text-pth-muted-on-dark';
+const linkHover    = isLight ? 'hover:text-pth-text-on-light' : 'hover:text-pth-paper';
+---
+<!doctype html>
+<html lang="en" class={isLight ? 'pth light' : 'pth'}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <meta name="robots" content="noindex" />
+</head>
+<body class={bodyClass}>
+  <header class={`border-b ${headerBorder}`}>
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-6 px-4 py-4 md:py-5">
+      <a href="/" class="inline-flex items-center gap-3">
+        <img src={logoSrc} alt="The Part-Time Hypnotist" class="h-9 md:h-10 w-auto" />
+      </a>
+      <div class={`text-right text-xs md:text-sm leading-relaxed ${muted}`}>
+        <span class={`font-bold ${helpStrong}`}>Need Help?</span><br />
+        <a href="mailto:support@theparttimehypnotist.com" class="text-pth-brand-blue hover:underline">support@theparttimehypnotist.com</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class={`border-t ${footerBorder} mt-16`}>
+    <div class={`max-w-3xl mx-auto px-4 py-10 text-center text-sm space-y-2 ${muted}`}>
+      <p>© Copyright 2026 Dan Candell. <a href="https://dancandell.com" class={linkHover}>Dancandell.com</a></p>
+      <p>
+        <a href="/terms" class={linkHover}>Terms of Service</a> ·
+        <a href="/privacy" class={linkHover}>Privacy Policy</a>
+      </p>
+      <p>Need help? <a href="mailto:support@theparttimehypnotist.com" class={linkHover}>support@theparttimehypnotist.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

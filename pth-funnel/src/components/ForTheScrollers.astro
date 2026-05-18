@@ -1,0 +1,103 @@
+---
+import CtaBlock from './CtaBlock.astro';
+const bonuses = [
+  {
+    n: 1,
+    title: 'The Instant Client Campaign',
+    subtitle: 'Get Your First Paying Client Using The Network You Have Already',
+    image: '/images/23-bonus-1-instant-client-campaign.png',
+    paragraphs: [
+      'This is the MUST-USE system we designed for aspiring hypnotists who don\'t want to wait months posting content to get their first client.',
+      'This is a fast, copy-paste approach – a proven Facebook post template that attracts warm leads without you looking "salesy" or desperate.',
+      'The template is specifically engineered to tap into problems people are already thinking about — so they reach out to YOU instead of you chasing them.',
+      'When you combine this template with your newly learned hypnosis skills, you\'ll have your first paying client within days, not months.',
+    ],
+    bullets: [
+      'The exact Facebook post template that\'s generated 200+ client inquiries',
+      'A step-by-step guide on where to post it (hint: NOT on your personal timeline)',
+      'The 3 follow-up messages to send when people respond (so you don\'t fumble the handoff)',
+    ],
+    footer: 'And once you land your first client using this campaign, you\'ll have the confidence and momentum to never worry about "finding clients" again.',
+  },
+  {
+    n: 2,
+    title: 'The Rapid Induction Formula Ebook',
+    subtitle: 'To Hypnotize Clients In Under 60 Seconds',
+    image: '/images/24-bonus-2-rapid-induction-formula.png',
+    paragraphs: [
+      'The reason Dan has worked with 13,000+ clients over 20 years is because he mastered the art of rapid inductions — getting clients into a hypnotic state in under 60 seconds.',
+      'Unlike other hypnotists who take 20+ minutes with progressive relaxation scripts (while clients get bored or distracted), you\'ll be able to induce trance states almost instantly.',
+      'On your personalized download, you\'ll receive the exact Rapid Induction Formula eBook that Dan used to build his reputation as one of the fastest, most effective hypnotists in the industry.',
+    ],
+    bullets: [],
+    footer: '',
+  },
+  {
+    n: 3,
+    title: 'The First Session Script Bundle',
+    subtitle: 'Never Feel "Lost" With A Client Again',
+    image: '/images/25-bonus-3-first-session-scripts.png',
+    paragraphs: [
+      '90% of beginner hypnotists freeze up in their first few sessions because they don\'t know what to say or how to structure the call.',
+      'When you work with clients, every session should flow naturally while hitting the key transformation points.',
+      'No more awkward silences, no more "what do I say next?" panic.',
+      'This script bundle walks you through the exact structure for your first 3 sessions — from intake to transformation to the upsell conversation.',
+    ],
+    bullets: [
+      'Session 1: The "Rapid Relief" Intake Session (how to diagnose their core issue in 15 minutes)',
+      'Session 2: The Deep Work Session (the hypnotic process that creates the breakthrough)',
+      'Session 3: The Integration & Upsell Session (how to naturally transition them into a premium package)',
+    ],
+    footer: '',
+  },
+];
+---
+<section class="section bg-slate-900 text-white">
+  <div class="section-wide">
+    <p class="text-center text-pth-orange uppercase tracking-wider font-semibold mb-2">For The Scrollers…</p>
+    <h2 class="text-3xl md:text-5xl font-extrabold text-center mb-6">
+      So You're Just Like Me,<br />Scrolling Straight To The Bottom
+    </h2>
+    <p class="text-center text-slate-300 text-base md:text-lg max-w-3xl mx-auto mb-12">
+      I get it! You're a busy coach or professional who wants to cut to the chase and start helping more clients straight away. Here's the short summary of what you'll get for just <span class="text-pth-orange font-bold text-2xl">$14.95</span>:
+    </p>
+
+    <div class="bg-slate-800/60 rounded-2xl p-6 md:p-10 backdrop-blur border border-slate-700 mb-10">
+      <img src="/images/35-offer-stack-composite-repeat.png" alt="Full Part-Time Hypnotist offer stack" class="w-full" />
+    </div>
+
+    <div class="space-y-16">
+      {bonuses.map(b => (
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div class={b.n % 2 === 0 ? 'md:order-2' : ''}>
+            <img src={b.image} alt={`Bonus #${b.n}: ${b.title}`} class="w-full" />
+          </div>
+          <div class={b.n % 2 === 0 ? 'md:order-1' : ''}>
+            <p class="text-pth-orange font-bold uppercase mb-2">Bonus #{b.n}</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold mb-2">{b.title}</h3>
+            <p class="text-pth-blue italic mb-4">({b.subtitle})</p>
+            <div class="space-y-3 mb-4 text-slate-300 leading-relaxed">
+              {b.paragraphs.map(p => <p>{p}</p>)}
+            </div>
+            {b.bullets.length > 0 && (
+              <>
+                <p class="font-semibold mb-2">Here's what's inside:</p>
+                <ul class="space-y-2">
+                  {b.bullets.map(x => (
+                    <li class="flex gap-2 items-start text-slate-300">
+                      <span class="text-pth-green flex-shrink-0">👉</span>
+                      <span>{x}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {b.footer && <p class="mt-4 text-slate-300 leading-relaxed">{b.footer}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <CtaBlock />
+  </div>
+</section>

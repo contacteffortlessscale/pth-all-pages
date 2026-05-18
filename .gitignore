@@ -1,0 +1,22 @@
+# Node / build artifacts
+node_modules/
+dist/
+.astro/
+.vercel/
+
+# Env files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs and OS junk
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Astro temp
+*.tsbuildinfo

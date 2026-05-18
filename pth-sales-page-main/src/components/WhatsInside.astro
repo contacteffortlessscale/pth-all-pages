@@ -1,0 +1,33 @@
+---
+import CtaBlock from './CtaBlock.astro';
+const items = [
+  '6 "Rapid Relief" hypnotic tools that deliver client results FAST — simple, fast acting tools that anyone can learn even if they have zero hypnosis experience',
+  'My "Instant Client" system to get your first client from your current network — three simple strategies I\'ve used 100s of times to land clients in my local area',
+  'Know exactly how to run a client session because I\'ll break down each section of my 90m sessions so you\'re never stuck wondering what to DO with clients (this can also act as a "paid sales call" into your higher ticket sessions)',
+  'Real world scripts that you can use in different niches like weight loss, smoking cessation, anxiety, and many more…',
+  'My "hybrid hypnosis" model that helps me sell packages of $5,000 while most hypnotists are stuck selling individual sessions for $100/hr',
+  'INSTANT access to the full training and 5 juicy bonuses',
+];
+---
+<section class="section bg-slate-50">
+  <div class="section-wide">
+    <h2 class="text-3xl md:text-5xl font-extrabold text-center mb-3">
+      <span class="text-pth-blue">What's Inside The</span><br />
+      Part-Time Hypnotist?
+    </h2>
+    <div class="mt-10 grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <img src="/images/21-solution-audience-photo.jpg" alt="Dan teaching a live group of part-time hypnotists" class="rounded-xl shadow-xl w-full" />
+      </div>
+      <ul class="space-y-4">
+        {items.map(t => (
+          <li class="flex gap-3 items-start">
+            <span class="text-pth-green text-xl flex-shrink-0">✅</span>
+            <span class="text-base md:text-lg leading-relaxed">{t}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <CtaBlock />
+  </div>
+</section>

@@ -1,0 +1,58 @@
+---
+// Proof / Trusted-By section — matches the live page layout:
+// 1. White section
+// 2. Press logos row at top
+// 3. Big "Trusted By 13,521+" headline
+// 4. Two-column grid where testimonials alternate light/dark by GHL design
+// 5. Footer card with headshot + body + CTA
+
+import CtaBlock from './CtaBlock.astro';
+
+const leftCol = [
+  '/images/06-proof-press-logos.png', // press logos as first item in left col? Actually we put it above
+];
+// Proof images split into left (lighter cards) and right (darker cards)
+const lightTestimonials = [
+  '/images/07-proof-testimonial-confidence.png',
+  '/images/09-proof-testimonial-portraits-16k.png',
+  '/images/11-proof-testimonial-tobacco.png',
+  '/images/14-proof-testimonial-mind-blown.png',
+  '/images/16-proof-testimonial-heart-saved.png',
+  '/images/18-proof-testimonial-yelp.png',
+];
+const darkTestimonials = [
+  '/images/08-proof-testimonial-therapy.png',
+  '/images/10-proof-testimonial-jill-morin.png',
+  '/images/12-proof-testimonial-memory.png',
+  '/images/13-proof-testimonial-anxiety.png',
+  '/images/15-proof-testimonial-mind-try.png',
+  '/images/17-proof-testimonial-caretaker.png',
+];
+---
+<section class="section bg-white">
+  <div class="section-wide">
+    {/* Press logos */}
+    <div class="flex justify-center mb-10">
+      <img src="/images/06-proof-press-logos.png" alt="As seen on Forbes, Fox News, TEDx, Telegram & Gazette, WXLO" class="max-w-3xl w-full" />
+    </div>
+
+    {/* Big trusted-by headline */}
+    <h2 class="text-3xl md:text-5xl font-extrabold text-center mb-12">
+      Trusted By <span class="text-pth-blue">13,521+</span> Clients Over 20+ Years…
+    </h2>
+
+    {/* Two-column testimonial grid (alternating light/dark like the live page) */}
+    <div class="grid md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
+      <div class="space-y-4 md:space-y-6">
+        {lightTestimonials.map(src => (
+          <img src={src} alt="Client testimonial" class="w-full rounded-lg shadow-md" loading="lazy" />
+        ))}
+      </div>
+      <div class="space-y-4 md:space-y-6">
+        {darkTestimonials.map(src => (
+          <img src={src} alt="Client testimonial" class="w-full rounded-lg shadow-md" loading="lazy" />
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,33 @@
+---
+import CtaBlock from './CtaBlock.astro';
+const items = [
+  'Full explanations behind the concept and philosophy of The Part-Time Hypnotist framework',
+  'In-depth breakdowns of each of the 6 "rapid relief" hypnotic processes',
+  'Advanced scientific and psychological reasons behind why Hypnotism works',
+  'A 2hr online course you can go through on Saturday morning',
+  'Specific tools for different "areas of change" — smoking, productivity, weight loss, anxiety, and more',
+  'Fill-in-the-blanks templates you can use to start getting clients in any niche',
+  'Comprehensive instructions on how to run your clients sessions with script provided',
+];
+---
+<section class="section bg-white">
+  <div class="section-wide">
+    <h2 class="text-3xl md:text-5xl font-extrabold text-center mb-10">
+      Here's A <span class="text-pth-blue">Breakdown</span> Of The Part-Time Hypnotist
+    </h2>
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <ul class="space-y-4 order-2 md:order-1">
+        {items.map(t => (
+          <li class="flex gap-3 items-start">
+            <span class="text-pth-green text-xl flex-shrink-0">✅</span>
+            <span class="text-base md:text-lg leading-relaxed">{t}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="order-1 md:order-2">
+        <img src="/images/05-hero-offer-stack-composite.png" alt="Full Part-Time Hypnotist offer stack with bonuses" class="w-full" />
+      </div>
+    </div>
+    <CtaBlock />
+  </div>
+</section>

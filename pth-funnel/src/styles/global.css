@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .cta-btn {
+    @apply inline-block bg-pth-orange hover:bg-pth-orange-dark text-white font-bold uppercase tracking-wide px-8 py-4 rounded-md shadow-lg transition-all transform hover:-translate-y-0.5;
+  }
+  .cta-btn-lg {
+    @apply inline-block bg-pth-orange hover:bg-pth-orange-dark text-white font-extrabold uppercase tracking-wide text-lg md:text-xl px-10 py-5 rounded-md shadow-xl transition-all transform hover:-translate-y-0.5;
+  }
+  .check-li {
+    @apply flex gap-3 items-start text-base md:text-lg leading-relaxed;
+  }
+  .check-li::before {
+    content: '✅';
+    @apply flex-shrink-0;
+  }
+  .section {
+    @apply py-12 md:py-20 px-4;
+  }
+  .section-narrow {
+    @apply max-w-3xl mx-auto;
+  }
+  .section-wide {
+    @apply max-w-6xl mx-auto;
+  }
+}

@@ -1,0 +1,254 @@
+/* =========================================================================
+   The Part-Time Hypnotist — Colors & Type
+   Editorial masthead aesthetic. Tuned for high legibility, especially for
+   older web visitors: 18px minimum body, 1.6 line-height, no thin weights.
+   ========================================================================= */
+
+/* ----- Fonts ------------------------------------------------------------- */
+/* Display: Oswald (tall condensed sans, free Google Font, matches brief).
+   Body:    Atkinson Hyperlegible (designed by Braille Institute for low-vision
+            readers — perfect fit for the "easy for older people" requirement).
+   Mono:    JetBrains Mono (only for code/inline tokens, optional).         */
+
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
+:root {
+  /* ===== Brand palette =================================================== */
+  --pth-ink:           #07090E;   /* Page background, ultra-dark blue-black */
+  --pth-soft-ink:      #0C1018;   /* Cards / surface 1 on dark */
+  --pth-soft-ink-2:    #141A26;   /* Surface 2, hover on dark surfaces */
+  --pth-paper:         #F4F2EE;   /* Logo paper-white, headings on dark */
+
+  --pth-cyan:          #00D6FF;
+  --pth-blue:          #2563EB;
+  --pth-violet:        #7B3DFF;
+
+  /* The signature gradient. ALWAYS left→right, cyan→blue→violet. */
+  --pth-brand-gradient:
+    linear-gradient(95deg, #00D6FF 0%, #2563EB 54%, #7B3DFF 100%);
+
+  /* Vertical version, used sparingly (e.g. the door-base wedge). */
+  --pth-brand-gradient-v:
+    linear-gradient(180deg, #00D6FF 0%, #2563EB 55%, #7B3DFF 100%);
+
+  /* ===== Readable web copy ============================================== */
+  --pth-body-on-dark:  #D7E1F4;   /* Body text on dark backgrounds */
+  --pth-muted-on-dark: #A8B5CC;   /* Captions / meta on dark */
+  --pth-rule-on-dark:  #2A3142;   /* Hairlines on dark */
+  --pth-divider-on-dark: rgba(168, 181, 204, 0.22);
+
+  --pth-light-bg:      #F7F8FC;   /* Section background on light pages */
+  --pth-paper-card:    #FFFFFF;   /* Cards on light */
+  --pth-text-on-light: #101521;   /* Body on light */
+  --pth-muted-on-light:#4A5468;   /* Caption on light */
+  --pth-rule-on-light: #E2E6F0;
+
+  /* ===== CTA accents (warm, used ONLY for buttons / pricing) ============ */
+  --pth-cta-gold:      #FFC107;
+  --pth-cta-orange:    #FF6B1A;
+  --pth-cta-gradient:  linear-gradient(95deg, #FFC107 0%, #FF6B1A 100%);
+  --pth-cta-shadow:    0 8px 24px rgba(255, 107, 26, 0.28);
+
+  /* ===== Semantic ======================================================== */
+  --pth-success: #1FB572;
+  --pth-warning: #FFC107;
+  --pth-danger:  #E5484D;
+  --pth-info:    #2563EB;
+
+  /* ===== Type stacks ===================================================== */
+  --pth-display-font: "Oswald", "Bebas Neue", "Anton", Impact, "Arial Narrow", sans-serif;
+  --pth-body-font:    "Atkinson Hyperlegible", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pth-mono-font:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ===== Type scale (rem-relative, 1rem = 18px base) ===================== */
+  --pth-fs-mini:     0.78rem;   /* 14px — meta labels only */
+  --pth-fs-small:    0.89rem;   /* 16px — small print, captions */
+  --pth-fs-body:     1rem;      /* 18px — MINIMUM body size */
+  --pth-fs-body-lg:  1.17rem;   /* 21px — generous body */
+  --pth-fs-lede:     1.39rem;   /* 25px — pull quotes / intros */
+  --pth-fs-h4:       1.56rem;   /* 28px */
+  --pth-fs-h3:       2.11rem;   /* 38px */
+  --pth-fs-h2:       2.89rem;   /* 52px */
+  --pth-fs-h1:       4rem;      /* 72px */
+  --pth-fs-display:  5.78rem;   /* 104px — hero only */
+
+  /* Line heights — generous. Older readers need air. */
+  --pth-lh-display:  0.95;
+  --pth-lh-heading:  1.08;
+  --pth-lh-body:     1.6;
+  --pth-lh-small:    1.5;
+
+  /* Tracking. Display caps get a small positive track to feel editorial. */
+  --pth-tr-display:  0.01em;
+  --pth-tr-eyebrow:  0.22em;     /* THE PART-TIME HYPNOTIST eyebrow energy */
+  --pth-tr-button:   0.08em;
+  --pth-tr-body:     0;
+
+  /* ===== Spacing scale (4px base, 1rem=18px) ============================= */
+  --pth-sp-1: 0.22rem;   /* 4 */
+  --pth-sp-2: 0.44rem;   /* 8 */
+  --pth-sp-3: 0.67rem;   /* 12 */
+  --pth-sp-4: 0.89rem;   /* 16 */
+  --pth-sp-5: 1.33rem;   /* 24 */
+  --pth-sp-6: 1.78rem;   /* 32 */
+  --pth-sp-7: 2.67rem;   /* 48 */
+  --pth-sp-8: 3.56rem;   /* 64 */
+  --pth-sp-9: 5.33rem;   /* 96 */
+  --pth-sp-10: 7.11rem;  /* 128 */
+
+  /* ===== Radii — sparing. Editorial brand favours hard corners. ========== */
+  --pth-r-none: 0;
+  --pth-r-sm:   4px;     /* inputs */
+  --pth-r-md:   8px;     /* cards */
+  --pth-r-lg:   14px;    /* hero cards, modals */
+  --pth-r-pill: 999px;   /* CTAs, badges */
+
+  /* ===== Borders ========================================================== */
+  --pth-bw-hair: 1px;
+  --pth-bw-rule: 2px;
+  --pth-bw-bold: 3px;
+
+  /* ===== Shadow / elevation (kept restrained on dark) ==================== */
+  --pth-shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
+  --pth-shadow-md:  0 6px 18px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03) inset;
+  --pth-shadow-lg:  0 24px 60px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --pth-glow-brand: 0 0 0 1px rgba(37,99,235,0.35), 0 12px 40px rgba(123,61,255,0.25);
+  --pth-glow-cta:   0 8px 28px rgba(255,107,26,0.30);
+
+  /* ===== Motion ========================================================== */
+  --pth-ease-out: cubic-bezier(0.16, 1, 0.3, 1);   /* signature ease */
+  --pth-ease-in:  cubic-bezier(0.7, 0, 0.84, 0);
+  --pth-dur-fast: 140ms;
+  --pth-dur-base: 220ms;
+  --pth-dur-slow: 480ms;
+
+  /* ===== Layout ========================================================== */
+  --pth-content-max: 1180px;
+  --pth-prose-max:   68ch;       /* ~68 chars for very comfortable reading */
+}
+
+/* =========================================================================
+   Semantic element defaults — apply by adding class="pth" to a root.
+   ========================================================================= */
+
+.pth, .pth body {
+  font-family: var(--pth-body-font);
+  font-size: var(--pth-fs-body);
+  line-height: var(--pth-lh-body);
+  color: var(--pth-body-on-dark);
+  background: var(--pth-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.pth.light, .pth .light {
+  color: var(--pth-text-on-light);
+  background: var(--pth-light-bg);
+}
+
+/* Headings — display font, condensed caps energy */
+.pth h1, .pth .h1,
+.pth h2, .pth .h2,
+.pth h3, .pth .h3,
+.pth h4, .pth .h4 {
+  font-family: var(--pth-display-font);
+  font-weight: 700;
+  line-height: var(--pth-lh-heading);
+  letter-spacing: var(--pth-tr-display);
+  color: var(--pth-paper);
+  margin: 0 0 var(--pth-sp-4);
+  text-wrap: balance;
+}
+.pth.light h1, .pth.light h2, .pth.light h3, .pth.light h4,
+.pth .light h1, .pth .light h2, .pth .light h3, .pth .light h4 {
+  color: var(--pth-text-on-light);
+}
+
+.pth h1, .pth .h1 { font-size: var(--pth-fs-h1); text-transform: uppercase; }
+.pth h2, .pth .h2 { font-size: var(--pth-fs-h2); text-transform: uppercase; }
+.pth h3, .pth .h3 { font-size: var(--pth-fs-h3); text-transform: uppercase; }
+.pth h4, .pth .h4 { font-size: var(--pth-fs-h4); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.pth .display {
+  font-family: var(--pth-display-font);
+  font-size: var(--pth-fs-display);
+  line-height: var(--pth-lh-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--pth-tr-display);
+  color: var(--pth-paper);
+  text-wrap: balance;
+}
+
+.pth .eyebrow {
+  font-family: var(--pth-body-font);
+  font-size: var(--pth-fs-mini);
+  font-weight: 700;
+  letter-spacing: var(--pth-tr-eyebrow);
+  text-transform: uppercase;
+  color: var(--pth-muted-on-dark);
+}
+
+.pth p, .pth .body {
+  font-size: var(--pth-fs-body);
+  line-height: var(--pth-lh-body);
+  max-width: var(--pth-prose-max);
+  margin: 0 0 var(--pth-sp-5);
+}
+.pth .body-lg { font-size: var(--pth-fs-body-lg); }
+.pth .lede {
+  font-size: var(--pth-fs-lede);
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--pth-paper);
+}
+
+.pth small, .pth .small {
+  font-size: var(--pth-fs-small);
+  line-height: var(--pth-lh-small);
+  color: var(--pth-muted-on-dark);
+}
+
+.pth a {
+  color: var(--pth-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  transition: color var(--pth-dur-fast) var(--pth-ease-out);
+}
+.pth a:hover { color: #66E5FF; }
+
+.pth code, .pth kbd, .pth pre {
+  font-family: var(--pth-mono-font);
+  font-size: 0.94em;
+}
+
+/* The signature gradient text utility */
+.pth .gradient-text {
+  background: var(--pth-brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Hairline rule, masthead-style */
+.pth .rule {
+  border: 0;
+  border-top: var(--pth-bw-hair) solid var(--pth-divider-on-dark);
+  margin: var(--pth-sp-5) 0;
+}
+
+/* Focus ring — visible, never just a browser default. */
+.pth *:focus-visible {
+  outline: 2px solid var(--pth-cyan);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pth *, .pth *::before, .pth *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,17 @@
+---
+const { variant = 'default' } = Astro.props;
+const checkoutUrl = import.meta.env.PUBLIC_CHECKOUT_URL || '#TODO-checkout-url';
+---
+<div class="text-center my-10">
+  <a href={checkoutUrl} class="cta-btn-lg" data-cta-checkout>
+    Discover Hypnosis Today →
+  </a>
+  <p class="mt-4 text-sm md:text-base text-slate-600 italic">
+    Instantly Unlock Access To The Program & 3 Free Bonuses
+  </p>
+  {variant === 'default' && (
+    <p class="mt-3 max-w-2xl mx-auto text-xs md:text-sm text-slate-500 leading-relaxed">
+      It's backed by our 30-Day Better Than Amazon Guarantee. Try just ONE of the techniques inside on yourself, a friend or family member and if you can't put them into a hypnotic trance allowing them to experience an immediate shift to a place of more peace, confidence, and joy, I'll give you a full refund no questions asked.
+    </p>
+  )}
+</div>
