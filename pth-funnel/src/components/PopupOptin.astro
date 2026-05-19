@@ -77,4 +77,8 @@ const checkoutUrl = import.meta.env.PUBLIC_CHECKOUT_URL || '/checkout';
     } catch (e2) {
       err.textContent = e2.message || 'Something went wrong. Please try again.';
       err.classList.remove('hidden');
-      btn.disabled = false; idle.classList.r
+      btn.disabled = false; idle.classList.remove('hidden'); busy.classList.add('hidden');
+    }
+  });
+})();
+</script>

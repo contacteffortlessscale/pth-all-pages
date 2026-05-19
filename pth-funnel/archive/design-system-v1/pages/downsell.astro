@@ -1,0 +1,115 @@
+---
+// /downsell — second-chance offer if the upsell is declined.
+// PTH Design System LIGHT theme (dark text on light surfaces).
+import FunnelLayout from '../layouts/FunnelLayout.astro';
+import { verifyOrderToken } from '../lib/orderToken';
+
+const orderToken = Astro.url.searchParams.get('order') || '';
+const payload = orderToken ? verifyOrderToken(orderToken) : null;
+
+// Preview bypass: `?preview=1` skips the token check so you can view the page
+// without going through a real Stripe checkout. Only honored in local dev.
+const isPreview = Astro.url.searchParams.get('preview') === '1' && (import.meta.env.DEV || import.meta.env.ALLOW_PREVIEW_BYPASS === '1');
+
+const downsellName = import.meta.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
+const downsellAmountCents = Number(import.meta.env.PRODUCT_DOWNSELL_AMOUNT_CENTS || 2700);
+const downsellAmount = (downsellAmountCents / 100).toFixed(0);
+
+if (!payload && !isPreview) {
+  return Astro.redirect('/checkout');
+}
+---
+<FunnelLayout title={`Last chance · ${downsellName}`} mode="light">
+  {isPreview && (
+    <div class="bg-pth-cta-gold/20 border-b border-pth-cta-orange/40">
+      <div class="max-w-3xl mx-auto px-4 py-2.5 text-xs md:text-sm flex items-center justify-center gap-2">
+        <span class="font-display uppercase tracking-widest text-pth-cta-orange">Preview mode</span>
+        <span class="text-pth-muted-on-light">— viewed without a real checkout. The Yes button won't charge.</span>
+      </div>
+    </div>
+  )}
+
+  <section class="max-w-3xl mx-auto px-4 pt-12 md:pt-16 pb-10">
+    <p class="text-xs font-bold tracking-[0.22em] uppercase text-pth-brand-blue mb-3">One-time offer · last chance</p>
+    <h1 class="font-display text-3xl md:text-5xl font-bold uppercase tracking-tight text-pth-text-on-light leading-[0.95]">
+      Get Dan's
+      <span class="text-transparent bg-clip-text" style="background-image: linear-gradient(95deg,#00D6FF 0%,#2563EB 54%,#7B3DFF 100%);">"weird" $650/hr sessions</span>
+      for ${downsellAmount}?
+    </h1>
+    <p class="mt-5 text-pth-text-on-light text-lg md:text-xl max-w-2xl leading-relaxed">
+      Recordings of real client sessions Dan sold for $650/hr. Watch over his shoulder and see exactly how the sessions are structured, how challenges get handled, and how transformations land. One click adds it to your order using the card you already entered.
+    </p>
+  </section>
+
+  <!-- Guarantee box -->
+  <section class="max-w-3xl mx-auto px-4 pb-10">
+    <div class="bg-pth-paper-card border border-pth-rule-on-light rounded-lg p-6 md:p-8 shadow-sm">
+      <p class="text-xs font-bold tracking-[0.22em] uppercase text-pth-brand-blue mb-2">Better-than-Amazon guarantee</p>
+      <h3 class="font-display uppercase tracking-wide text-pth-text-on-light text-xl">
+        Watch a single session. If you don't pick up at least three usable moves, write us and we'll refund every cent.
+      </h3>
+    </div>
+  </section>
+
+  <!-- Price + CTA -->
+  <section class="max-w-3xl mx-auto px-4 pb-20">
+    <div class="text-center mb-10">
+      <p class="text-xs font-bold tracking-[0.22em] uppercase text-pth-brand-blue mb-3">Your price on this page only</p>
+      <p class="font-display uppercase tracking-widest text-pth-muted-on-light text-sm md:text-base">
+        What clients paid Dan per session: <span class="line-through decoration-2 decoration-pth-muted-on-light/50">$650/hr</span>
+      </p>
+      <p class="mt-3 font-display font-bold leading-none">
+        <span class="block text-pth-muted-on-light uppercase tracking-widest text-sm md:text-base">One-time payment</span>
+        <span class="block mt-2 text-transparent bg-clip-text text-7xl md:text-8xl" style="background-image: linear-gradient(95deg,#00D6FF 0%,#2563EB 54%,#7B3DFF 100%);">${downsellAmount}</span>
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <button id="yes-btn" type="button"
+        class="font-display uppercase tracking-wider text-lg md:text-xl py-5 px-6 rounded-full transition disabled:opacity-60 disabled:cursor-not-allowed"
+        style="background-image: linear-gradient(95deg,#FFC107 0%,#FF6B1A 100%); color:#1a1206; box-shadow: 0 8px 28px rgba(255,107,26,0.30);">
+        <span data-idle>Yes — add the recordings for ${downsellAmount}</span>
+        <span data-busy class="hidden">Charging your saved card…</span>
+      </button>
+      <p class="text-center text-sm text-pth-muted-on-light">
+        One click. We'll charge the card you used a moment ago — no need to re-enter anything.
+      </p>
+
+      <a id="no-btn" href={`/thank-you?order=${encodeURIComponent(orderToken)}`}
+        class="mt-4 block text-center text-sm text-pth-muted-on-light underline underline-offset-4 hover:text-pth-text-on-light">
+        No thanks — finish my order
+      </a>
+    </div>
+
+    <p id="err" class="hidden mt-4 text-sm text-red-600 text-center" role="alert"></p>
+  </section>
+
+  <script is:inline define:vars={{ orderToken }}>
+  (function () {
+    const yes = document.getElementById('yes-btn');
+    const err = document.getElementById('err');
+    if (!yes) return;
+
+    yes.addEventListener('click', async () => {
+      err.classList.add('hidden'); err.textContent = '';
+      const idle = yes.querySelector('[data-idle]');
+      const busy = yes.querySelector('[data-busy]');
+      yes.disabled = true; idle.classList.add('hidden'); busy.classList.remove('hidden');
+      try {
+        const r = await fetch('/api/downsell', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_token: orderToken }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || `Downsell charge failed (${r.status})`);
+        window.location.href = `/thank-you?order=${encodeURIComponent(orderToken)}&downsell=1`;
+      } catch (e) {
+        err.textContent = e.message || 'Could not complete the charge. Try again or skip.';
+        err.classList.remove('hidden');
+        yes.disabled = false; idle.classList.remove('hidden'); busy.classList.add('hidden');
+      }
+    });
+  })();
+  </script>
+</FunnelLayout>

@@ -1,0 +1,39 @@
+---
+// /thank-you — final confirmation page.
+import FunnelLayout from '../layouts/FunnelLayout.astro';
+import { verifyOrderToken } from '../lib/orderToken';
+
+const orderToken = Astro.url.searchParams.get('order') || '';
+const payload = orderToken ? verifyOrderToken(orderToken) : null;
+const boughtUpsell = Astro.url.searchParams.get('upsell') === '1';
+const boughtDownsell = Astro.url.searchParams.get('downsell') === '1';
+
+const productName = import.meta.env.PRODUCT_MAIN_NAME || 'The Part-Time Hypnotist';
+const upsellName = import.meta.env.PRODUCT_UPSELL_NAME || 'Instant Flow States';
+const downsellName = import.meta.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
+---
+<FunnelLayout title="Thank you · The Part-Time Hypnotist" mode="light">
+  <section class="max-w-2xl mx-auto px-4 pt-16 pb-20 text-center">
+    <p class="eyebrow text-pth-brand-blue mb-3">ORDER CONFIRMED</p>
+    <h1 class="font-display text-4xl md:text-6xl font-bold uppercase tracking-tight text-pth-text-on-light leading-tight">
+      You're in.
+    </h1>
+    <p class="mt-4 text-pth-text-on-light text-lg md:text-xl">
+      {payload?.firstName ? `${payload.firstName}, ` : ''}check your inbox for access details.
+      We've sent everything to <span class="text-pth-text-on-light">{payload?.email || 'your email'}</span>.
+    </p>
+
+    <div class="mt-10 bg-pth-paper-card border border-pth-rule-on-light rounded-lg p-6 text-left">
+      <p class="font-display uppercase tracking-widest text-pth-muted-on-light text-xs mb-4">What you ordered</p>
+      <ul class="space-y-2 text-pth-text-on-light">
+        <li class="flex gap-3"><span class="text-pth-brand-blue font-bold">✓</span> {productName}</li>
+        {boughtUpsell && <li class="flex gap-3"><span class="text-pth-brand-blue font-bold">✓</span> {upsellName}</li>}
+        {boughtDownsell && <li class="flex gap-3"><span class="text-pth-brand-blue font-bold">✓</span> {downsellName}</li>}
+      </ul>
+    </div>
+
+    <p class="mt-10 text-sm text-pth-muted-on-light">
+      Need anything? Email <a href="mailto:support@theparttimehypnotist.com" class="text-pth-brand-blue hover:underline">support@theparttimehypnotist.com</a>.
+    </p>
+  </section>
+</FunnelLayout>
