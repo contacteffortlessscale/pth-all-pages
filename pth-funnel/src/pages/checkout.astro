@@ -1,244 +1,172 @@
 ---
-// /checkout — legacy GHL style (BaseLayout: Inter / purple header / white body).
-// Stripe Elements mounts inside a clean white card.
-// All payment + API mechanics unchanged from the design-system version.
-import BaseLayout from '../layouts/BaseLayout.astro';
+// /checkout — serves the original GHL checkout HTML with a splice script
+// that:
+//   1. Loads Stripe.js
+//   2. Waits for the GHL payment form (form.form-payment.order-form-v2)
+//   3. Hides it and inserts our own Stripe Elements form in its place
+//   4. On submit, creates a Stripe Customer + PaymentMethod via /api/checkout
+//      and redirects to /upsell?order=<token>
+//
+// Everything else on the page (header, copy, order summary, guarantee,
+// "Here's everything you're getting", footer) is the original verbatim.
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+export const prerender = false;
 
 const publishableKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_PLACEHOLDER_REPLACE_ME';
-const productName = import.meta.env.PRODUCT_MAIN_NAME || 'The Part-Time Hypnotist';
 const productAmountCents = Number(import.meta.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
 const productAmount = (productAmountCents / 100).toFixed(2);
----
-<BaseLayout title="Secure Checkout · The Part-Time Hypnotist">
-  <!-- Reassurance strip -->
-  <section class="bg-slate-50 border-b border-slate-200">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs md:text-sm text-slate-600">
-      <span class="inline-flex items-center gap-2"><span class="text-pth-green text-lg">🔒</span> 100% Secure Order</span>
-      <span class="inline-flex items-center gap-2"><span>🎁</span> 3 Free Bonuses · $314 Value</span>
-      <span class="inline-flex items-center gap-2"><span>✅</span> 30-Day Money-Back Guarantee</span>
+
+let html = readFileSync(path.join(process.cwd(), 'src/raw/checkout.html'), 'utf8');
+
+const splice = `
+<style>
+  #pth-stripe-shell { max-width: 560px; margin: 24px auto; padding: 24px; border: 1px solid #e2e6f0; border-radius: 10px; background: #fff; box-shadow: 0 6px 24px rgba(15,23,42,0.06); font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: #0f172a; }
+  #pth-stripe-shell h2 { margin: 0 0 16px; font-size: 18px; font-weight: 700; }
+  #pth-stripe-shell .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  #pth-stripe-shell label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; }
+  #pth-stripe-shell input[type=text], #pth-stripe-shell input[type=email] { padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; color: #0f172a; font-family: inherit; background: #fff; }
+  #pth-stripe-shell input[type=text]:focus, #pth-stripe-shell input[type=email]:focus { outline: none; border-color: #188bf6; box-shadow: 0 0 0 3px rgba(24,139,246,0.18); }
+  #pth-stripe-shell .card-wrap { padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+  #pth-stripe-card { min-height: 22px; }
+  #pth-stripe-shell .submit { width: 100%; margin-top: 16px; padding: 16px 20px; background: #f6ad55; color: #fff; border: 0; border-radius: 6px; font-size: 18px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: background 120ms; }
+  #pth-stripe-shell .submit:hover { background: #dd8b2c; }
+  #pth-stripe-shell .submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  #pth-stripe-shell .err { display: none; margin-top: 10px; color: #e93d3d; font-size: 14px; text-align: center; }
+  #pth-stripe-shell .micro { margin-top: 10px; font-size: 12px; text-align: center; color: #64748b; }
+</style>
+<template id="pth-stripe-template">
+  <div id="pth-stripe-shell">
+    <h2>Secure Payment · Powered by Stripe</h2>
+    <div class="row">
+      <label>First name<input type="text" id="pth-first-name" autocomplete="given-name" required /></label>
+      <label>Email<input type="email" id="pth-email" autocomplete="email" required /></label>
     </div>
-  </section>
+    <label>Card details<div class="card-wrap"><div id="pth-stripe-card"></div></div></label>
+    <button type="button" class="submit" id="pth-pay-btn">
+      <span data-idle>Complete order — $${productAmount}</span>
+      <span data-busy style="display:none">Processing…</span>
+    </button>
+    <p class="err" id="pth-pay-err"></p>
+    <p class="micro">Your card details are sent directly to Stripe. We never see or store them.</p>
+  </div>
+</template>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function () {
+  var PUBLISHABLE_KEY = ${JSON.stringify(publishableKey)};
+  var PRODUCT_AMOUNT  = ${JSON.stringify(productAmount)};
 
-  <!-- Hero -->
-  <section class="section bg-white pt-10 md:pt-14 pb-6">
-    <div class="section-wide text-center">
-      <p class="text-pth-blue font-bold text-sm md:text-base uppercase tracking-wide mb-3">🧠 The Part-Time Hypnotist</p>
-      <h1 class="text-3xl md:text-5xl font-extrabold leading-tight mb-3">
-        You're Almost <span class="text-pth-blue">Finished...</span>
-      </h1>
-      <p class="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
-        Enter your details below to get instant access to the full Part-Time Hypnotist training and all 3 bonuses.
-      </p>
-    </div>
-  </section>
+  function init() {
+    var ghlForm = document.querySelector('form.form-payment.order-form-v2');
+    if (!ghlForm) return false;
 
-  <!-- Two-column checkout -->
-  <section class="bg-white pb-16 px-4">
-    <div class="max-w-5xl mx-auto grid md:grid-cols-5 gap-6 md:gap-8">
-      <!-- LEFT: form -->
-      <form id="checkout-form" class="md:col-span-3 space-y-6" novalidate>
-        <!-- Step 1: contact -->
-        <div class="bg-white border border-slate-200 rounded-lg p-5 md:p-6 shadow-sm">
-          <h2 class="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-pth-blue text-white text-sm">1</span>
-            Contact &amp; Shipping Information
-          </h2>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold uppercase tracking-wide text-slate-600">First name</span>
-              <input id="f-first-name" name="first_name" type="text" required autocomplete="given-name"
-                class="border border-slate-300 rounded-md px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pth-blue focus:border-pth-blue transition" />
-            </label>
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-bold uppercase tracking-wide text-slate-600">Email</span>
-              <input id="f-email" name="email" type="email" required autocomplete="email"
-                class="border border-slate-300 rounded-md px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pth-blue focus:border-pth-blue transition" />
-            </label>
-          </div>
-        </div>
+    // Hide the original GHL payment form.
+    ghlForm.style.display = 'none';
 
-        <!-- Step 2: payment -->
-        <div class="bg-white border border-slate-200 rounded-lg p-5 md:p-6 shadow-sm">
-          <h2 class="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-pth-blue text-white text-sm">2</span>
-            Payment
-          </h2>
-          <div class="border border-slate-300 rounded-md p-4 bg-slate-50">
-            <div id="card-element" class="min-h-[44px]"></div>
-          </div>
-          <p id="card-errors" class="hidden mt-2 text-sm text-pth-red" role="alert"></p>
-          <p class="mt-3 text-xs text-slate-500">
-            Your card details are handled directly by Stripe. We never see or store them on our servers.
-          </p>
-        </div>
+    // Insert our Stripe form in its place.
+    var tpl = document.getElementById('pth-stripe-template');
+    if (!tpl) return false;
+    var node = tpl.content.firstElementChild.cloneNode(true);
+    ghlForm.parentNode.insertBefore(node, ghlForm);
 
-        <!-- CTA -->
-        <button type="submit" id="pay-btn"
-          class="w-full bg-pth-orange hover:bg-pth-orange-dark text-white font-extrabold uppercase tracking-wide text-lg md:text-xl px-6 py-5 rounded-md shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
-          <span data-idle>Send Me The Training — ${productAmount}</span>
-          <span data-busy class="hidden">Processing…</span>
-        </button>
-
-        <p id="server-error" class="hidden text-center text-sm text-pth-red" role="alert"></p>
-
-        <p class="text-center text-xs text-slate-500">
-          By placing this order you agree to our
-          <a href="/terms" class="text-pth-blue hover:underline">Terms</a> and
-          <a href="/privacy" class="text-pth-blue hover:underline">Privacy Policy</a>.
-          <br />
-          * 100% Secure &amp; Safe Payments — Powered by Stripe *
-        </p>
-      </form>
-
-      <!-- RIGHT: order summary -->
-      <aside class="md:col-span-2">
-        <div class="sticky top-4 bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
-          <h3 class="text-sm font-bold uppercase tracking-wide text-slate-600">Order Summary</h3>
-
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
-            <div>
-              <p class="font-bold text-slate-900">{productName}</p>
-              <p class="text-xs text-slate-500 mt-1">Quantity: 1</p>
-            </div>
-            <p class="font-bold whitespace-nowrap">${productAmount}</p>
-          </div>
-
-          <div class="space-y-2 text-sm">
-            <p class="font-bold uppercase tracking-wide text-xs text-slate-600">Bonuses included</p>
-            <ul class="space-y-1.5 text-slate-700">
-              <li class="flex gap-2"><span class="text-pth-green">✅</span> The Instant Client Campaign</li>
-              <li class="flex gap-2"><span class="text-pth-green">✅</span> The Rapid Induction Formula Ebook</li>
-              <li class="flex gap-2"><span class="text-pth-green">✅</span> The First Session Script Bundle</li>
-            </ul>
-          </div>
-
-          <div class="flex items-center justify-between border-t border-slate-200 pt-4">
-            <span class="font-bold uppercase tracking-wide">Order Total</span>
-            <span class="font-extrabold text-2xl">${productAmount}</span>
-          </div>
-        </div>
-
-        <!-- Guarantee -->
-        <div class="mt-5 bg-slate-50 border border-slate-200 rounded-lg p-5">
-          <p class="font-bold text-base mb-2">🛡 Results-First Guarantee</p>
-          <p class="text-sm text-slate-700 leading-relaxed">
-            Try the training for 30 days. If you don't feel ready to take on your first paying client,
-            email us for a full refund. No forms, no friction.
-          </p>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <!-- Recap: Here's everything you're getting -->
-  <section class="section bg-slate-50">
-    <div class="section-narrow">
-      <h2 class="text-2xl md:text-4xl font-extrabold text-center mb-8">
-        Here's Everything You're Getting
-      </h2>
-      <ul class="space-y-3 text-base md:text-lg leading-relaxed">
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>6 "Rapid Relief" hypnotic tools</strong> that deliver client results FAST — simple, fast-acting tools anyone can learn, even with zero hypnosis experience.</span></li>
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>My "Instant Client" system</strong> — three strategies Dan has used hundreds of times to land first clients locally.</span></li>
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>How to run a client session</strong> — a full breakdown of a 90-minute session so you're never stuck wondering what to do.</span></li>
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Real-world scripts</strong> for weight loss, smoking cessation, anxiety, and other in-demand niches.</span></li>
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>The "hybrid hypnosis" model</strong> used to sell $5,000 packages instead of $100/hr individual sessions.</span></li>
-        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>INSTANT access</strong> to the full training and all three bonuses.</span></li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- Stripe.js + Elements -->
-  <script is:inline src="https://js.stripe.com/v3/"></script>
-  <script is:inline define:vars={{ publishableKey, productAmountCents }}>
-  (function () {
-    const form = document.getElementById('checkout-form');
-    const cardErrors = document.getElementById('card-errors');
-    const serverError = document.getElementById('server-error');
-    const payBtn = document.getElementById('pay-btn');
-    const firstNameEl = document.getElementById('f-first-name');
-    const emailEl = document.getElementById('f-email');
-    if (!form || !window.Stripe) return;
-
+    // Pre-fill from URL params (passed by the sales-page popup).
     try {
-      const params = new URLSearchParams(window.location.search);
-      const qFirst = params.get('first_name');
-      const qEmail = params.get('email');
-      if (qFirst && firstNameEl) firstNameEl.value = qFirst;
-      if (qEmail && emailEl) emailEl.value = qEmail;
+      var params = new URLSearchParams(window.location.search);
+      var qf = params.get('first_name'), qe = params.get('email');
+      if (qf) document.getElementById('pth-first-name').value = qf;
+      if (qe) document.getElementById('pth-email').value = qe;
     } catch (_) {}
 
-    const stripe = window.Stripe(publishableKey);
-    const elements = stripe.elements();
-    const card = elements.create('card', {
+    if (!window.Stripe) {
+      document.getElementById('pth-pay-err').style.display = 'block';
+      document.getElementById('pth-pay-err').textContent = 'Payment system failed to load. Please refresh.';
+      return true;
+    }
+
+    var stripe = window.Stripe(PUBLISHABLE_KEY);
+    var elements = stripe.elements();
+    var card = elements.create('card', {
       style: {
-        base: {
-          color: '#0f172a',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          fontSize: '16px',
-          '::placeholder': { color: '#94a3b8' },
-        },
+        base: { color: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '16px', '::placeholder': { color: '#94a3b8' } },
         invalid: { color: '#e93d3d', iconColor: '#e93d3d' },
       },
     });
-    card.mount('#card-element');
+    card.mount('#pth-stripe-card');
 
-    card.on('change', e => {
-      if (e.error) {
-        cardErrors.textContent = e.error.message;
-        cardErrors.classList.remove('hidden');
-      } else {
-        cardErrors.textContent = '';
-        cardErrors.classList.add('hidden');
-      }
-    });
-
+    var btn = document.getElementById('pth-pay-btn');
+    var err = document.getElementById('pth-pay-err');
     function setBusy(busy) {
-      const idle = payBtn.querySelector('[data-idle]');
-      const b = payBtn.querySelector('[data-busy]');
-      payBtn.disabled = busy;
-      idle.classList.toggle('hidden', busy);
-      b.classList.toggle('hidden', !busy);
+      btn.disabled = busy;
+      btn.querySelector('[data-idle]').style.display = busy ? 'none' : '';
+      btn.querySelector('[data-busy]').style.display = busy ? '' : 'none';
     }
 
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      serverError.classList.add('hidden'); serverError.textContent = '';
-      const first_name = (firstNameEl.value || '').trim();
-      const email = (emailEl.value || '').trim();
+    btn.addEventListener('click', function () {
+      err.style.display = 'none'; err.textContent = '';
+      var first_name = document.getElementById('pth-first-name').value.trim();
+      var email      = document.getElementById('pth-email').value.trim();
       if (!first_name || !email) {
-        serverError.textContent = 'Please fill in your name and email.';
-        serverError.classList.remove('hidden');
+        err.textContent = 'Please fill in your name and email.';
+        err.style.display = 'block';
         return;
       }
-
       setBusy(true);
-      try {
-        const pm = await stripe.createPaymentMethod({
-          type: 'card', card,
-          billing_details: { name: first_name, email },
-        });
+      stripe.createPaymentMethod({
+        type: 'card', card: card,
+        billing_details: { name: first_name, email: email },
+      }).then(function (pm) {
         if (pm.error) throw new Error(pm.error.message || 'Card error');
-
-        const r = await fetch('/api/checkout', {
+        return fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ first_name, email, payment_method_id: pm.paymentMethod.id }),
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(data.error || `Checkout failed (${r.status})`);
-
-        if (data.requires_action && data.payment_intent_client_secret) {
-          const action = await stripe.confirmCardPayment(data.payment_intent_client_secret);
-          if (action.error) throw new Error(action.error.message || 'Card authentication failed');
+          body: JSON.stringify({ first_name: first_name, email: email, payment_method_id: pm.paymentMethod.id }),
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); });
+      }).then(function (res) {
+        if (!res.ok) throw new Error((res.d && res.d.error) || 'Checkout failed');
+        if (res.d.requires_action && res.d.payment_intent_client_secret) {
+          return stripe.confirmCardPayment(res.d.payment_intent_client_secret).then(function (a) {
+            if (a.error) throw new Error(a.error.message || 'Card authentication failed');
+            window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
+          });
         }
-        if (!data.order_token) throw new Error('Server did not return an order token.');
-        window.location.href = `/upsell?order=${encodeURIComponent(data.order_token)}`;
-      } catch (e2) {
-        serverError.textContent = e2.message || 'Something went wrong. Please try again.';
-        serverError.classList.remove('hidden');
+        if (!res.d.order_token) throw new Error('Server did not return an order token.');
+        window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
+      }).catch(function (e) {
+        err.textContent = e.message || 'Something went wrong. Please try again.';
+        err.style.display = 'block';
         setBusy(false);
-      }
+      });
     });
-  })();
-  </script>
-</BaseLayout>
+
+    return true;
+  }
+
+  function start() {
+    if (init()) return;
+    var observer = new MutationObserver(function () { if (init()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(function () { observer.disconnect(); }, 15000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+`;
+
+if (html.indexOf('</body>') !== -1) {
+  html = html.replace('</body>', splice + '</body>');
+} else {
+  html += splice;
+}
+
+return new Response(html, {
+  status: 200,
+  headers: { 'Content-Type': 'text/html; charset=utf-8' },
+});
+---

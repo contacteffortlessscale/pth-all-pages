@@ -1,0 +1,41 @@
+---
+// /thank-you — order confirmation, legacy GHL style.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { verifyOrderToken } from '../lib/orderToken';
+
+const orderToken = Astro.url.searchParams.get('order') || '';
+const payload = orderToken ? verifyOrderToken(orderToken) : null;
+const boughtUpsell = Astro.url.searchParams.get('upsell') === '1';
+const boughtDownsell = Astro.url.searchParams.get('downsell') === '1';
+
+const productName = import.meta.env.PRODUCT_MAIN_NAME || 'The Part-Time Hypnotist';
+const upsellName = import.meta.env.PRODUCT_UPSELL_NAME || 'Self Hypnosis Secrets';
+const downsellName = import.meta.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
+---
+<BaseLayout title="Thank you · The Part-Time Hypnotist">
+  <section class="section bg-white pt-12 md:pt-16 pb-16 px-4">
+    <div class="section-narrow text-center">
+      <p class="text-pth-green font-bold uppercase tracking-wide text-sm md:text-base mb-3">✅ Order Confirmed</p>
+      <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
+        You're <span class="text-pth-blue">In!</span>
+      </h1>
+      <p class="text-base md:text-lg text-slate-700 leading-relaxed">
+        {payload?.firstName ? `${payload.firstName}, ` : ''}check your inbox for access details.
+        We've sent everything to <strong>{payload?.email || 'your email'}</strong>.
+      </p>
+
+      <div class="mt-10 bg-slate-50 border border-slate-200 rounded-lg p-6 text-left shadow-sm">
+        <p class="font-bold uppercase tracking-wide text-sm text-slate-600 mb-4">What you ordered</p>
+        <ul class="space-y-2 text-base md:text-lg text-slate-800">
+          <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span>{productName}</span></li>
+          {boughtUpsell && <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span>{upsellName}</span></li>}
+          {boughtDownsell && <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span>{downsellName}</span></li>}
+        </ul>
+      </div>
+
+      <p class="mt-10 text-sm text-slate-600">
+        Need anything? Email <a href="mailto:support@theparttimehypnotist.com" class="text-pth-blue hover:underline">support@theparttimehypnotist.com</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

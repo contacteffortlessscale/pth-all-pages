@@ -1,0 +1,225 @@
+---
+// /upsell — Upsell 1: Self Hypnosis Secrets ($197 one-time).
+// Legacy GHL style (BaseLayout: Inter / purple header / white body).
+// Copy adapted from https://theparttimehypnotist.com/welcome.
+//
+// Charge mechanics: one-click off-session against the saved card from /checkout.
+// Verified via HMAC-signed order token from the query string.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { verifyOrderToken } from '../lib/orderToken';
+
+const orderToken = Astro.url.searchParams.get('order') || '';
+const payload = orderToken ? verifyOrderToken(orderToken) : null;
+
+const isPreview = Astro.url.searchParams.get('preview') === '1'
+  && (import.meta.env.DEV || import.meta.env.ALLOW_PREVIEW_BYPASS === '1');
+
+const upsellName = import.meta.env.PRODUCT_UPSELL_NAME || 'Self Hypnosis Secrets';
+const upsellAmountCents = Number(import.meta.env.PRODUCT_UPSELL_AMOUNT_CENTS || 19700);
+const upsellAmount = (upsellAmountCents / 100).toFixed(0);
+
+if (!payload && !isPreview) {
+  return Astro.redirect('/checkout');
+}
+const firstName = payload?.firstName || (isPreview ? 'preview-viewer' : 'friend');
+---
+<BaseLayout title={`${upsellName} · Add to your order`}>
+  {isPreview && (
+    <div class="bg-pth-orange/15 border-b border-pth-orange/40">
+      <div class="max-w-4xl mx-auto px-4 py-2.5 text-xs md:text-sm flex items-center justify-center gap-2 text-slate-700">
+        <span class="font-bold uppercase tracking-widest text-pth-orange-dark">Preview mode</span>
+        <span>— viewed without a real checkout. The Yes button won't charge.</span>
+      </div>
+    </div>
+  )}
+
+  <!-- Hero -->
+  <section class="section bg-white pt-10 md:pt-14 pb-6">
+    <div class="section-narrow text-center">
+      <p class="text-pth-blue font-bold text-base md:text-lg mb-3">🥳 Welcome to The Part-Time Hypnotist!</p>
+      <h1 class="text-2xl md:text-4xl font-extrabold leading-tight">
+        Please Watch This Short Video To See How You Can Confidently <span class="text-pth-blue">Record And Sell</span> Self-Hypnosis Audios 👇
+      </h1>
+      <p class="mt-4 text-base md:text-lg text-slate-600">
+        {firstName}, before we send you in — take 4 minutes to see how today's order plugs into a done-for-you audio library you can start selling this week.
+      </p>
+    </div>
+  </section>
+
+  <!-- VSL placeholder -->
+  <section class="bg-white pb-10 px-4">
+    <div class="max-w-3xl mx-auto aspect-video bg-slate-900 rounded-lg shadow-2xl overflow-hidden relative flex items-center justify-center">
+      <div class="text-center text-white px-6">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-pth-orange mb-3">
+          <svg viewBox="0 0 24 24" class="w-9 h-9 text-white ml-1" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        </div>
+        <p class="font-bold uppercase tracking-wide text-base">VSL Placeholder</p>
+        <p class="mt-1 text-xs text-slate-300">Wire the player embed in <code>upsell.astro</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value stack -->
+  <section class="section bg-slate-50">
+    <div class="section-narrow">
+      <h2 class="text-2xl md:text-4xl font-extrabold text-center mb-8">
+        Here's Everything You're Getting With The <span class="text-pth-blue">White-Label Self-Hypnosis Secrets Bundle</span>
+      </h2>
+
+      <ul class="space-y-5">
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ 20 Done-For-You Self-Hypnosis Scripts <span class="text-slate-500">— "The Inner Transformation Library"</span></p>
+          <p class="text-base text-slate-700 leading-relaxed">Professionally crafted scripts covering the exact topics clients search for: Stress &amp; Anxiety Relief, Deep Sleep, Confidence, Breaking Bad Habits, Weight Loss, Laser Focus, Pain Management, Goal Manifestation, Public Speaking, Peak Performance, Relationships, Wealth Mindset, and more. Ready to record in your voice today. Never stare at a blank page again. <span class="text-slate-500">(Value: $997)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The "Bedroom Studio" Recording System</p>
+          <p class="text-base text-slate-700 leading-relaxed">Turn any quiet space into a recording studio using just your smartphone. Capture professional-quality audio within 24 hours. No tech skills, fancy equipment, or audio engineering required. <span class="text-slate-500">(Value: $297)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The Self-Hypnosis Science Decoder</p>
+          <p class="text-base text-slate-700 leading-relaxed">Understand why self-hypnosis works, explained in plain English. Know why your voice creates deeper change than anyone else's and the neuroscience that makes clients say "yes." Position yourself as the expert who understands the 'why.' <span class="text-slate-500">(Value: $197)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The Mix-&amp;-Match Induction System</p>
+          <p class="text-base text-slate-700 leading-relaxed">Choose from proven induction techniques (Progressive Relaxation, Focused Attention, Pattern Interrupt) and pair them with powerful deepeners (Staircase, Countdown, Pleasant Place) to create fully customized experiences. <span class="text-slate-500">(Value: $297)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The Hypnotic Voice Formula</p>
+          <p class="text-base text-slate-700 leading-relaxed">Master the tone, pacing, and inflection that keeps listeners in deep trance. Practice exercises transform nervous speakers into confident guides. Your voice becomes the instrument of transformation. <span class="text-slate-500">(Value: $197)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ Professional Awakening Scripts</p>
+          <p class="text-base text-slate-700 leading-relaxed">Bring clients out of hypnosis feeling energized and empowered. Carefully crafted closings ensure the work "sticks" and creates lasting change — no groggy confusion, just clear, positive reorientation. <span class="text-slate-500">(Value: $97)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The Troubleshooting Playbook</p>
+          <p class="text-base text-slate-700 leading-relaxed">Handle distractions during recording, "I hate my voice" syndrome, plateau adjustments, and resistance. Get past the obstacles that make 90% quit before finishing their first audio. <span class="text-slate-500">(Value: $147)</span></p>
+        </li>
+        <li class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+          <p class="font-bold text-base md:text-lg mb-1">✅ The Smart Equipment Guide</p>
+          <p class="text-base text-slate-700 leading-relaxed">Know which affordable tools ($40-$150) genuinely upgrade sound quality versus marketing hype. Apps, microphone comparisons, and minimal setups for maximum results. <span class="text-slate-500">(Value: $97)</span></p>
+        </li>
+      </ul>
+
+      <div class="mt-8 bg-white border-2 border-pth-blue rounded-lg p-5 flex items-center justify-between">
+        <span class="font-bold uppercase text-sm md:text-base tracking-wide text-slate-700">Total Stated Value</span>
+        <span class="font-extrabold text-2xl md:text-3xl text-pth-blue">$2,326</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use cases -->
+  <section class="section bg-white">
+    <div class="section-narrow">
+      <h2 class="text-2xl md:text-4xl font-extrabold text-center mb-8">
+        What Myself And Clients <span class="text-pth-blue">Use These For</span>
+      </h2>
+      <ul class="space-y-4 text-base md:text-lg leading-relaxed">
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Transform your own limiting beliefs first</strong> — use these 20 scripts to become living proof before you sell a single audio.</span></li>
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Create "sleep income"</strong> — record once during your morning coffee, earn repeatedly while you're living your life.</span></li>
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Become the hypnotist clients keep in their pocket</strong> — while competitors fight for appointment slots, your voice is in their ears daily.</span></li>
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Skip the 3-year learning curve</strong> — these aren't amateur scripts thrown together from Google searches; they're psychologically structured by professionals who've done this thousands of times.</span></li>
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Start earning today</strong> — literally everything is done. Choose script #1, press record on your phone, list it for sale tonight.</span></li>
+        <li class="flex gap-3 items-start"><span class="text-pth-green text-xl flex-shrink-0">✅</span><span><strong>Build a referral machine</strong> — when clients use your audio every night before sleep, YOU become their mental wellness partner (and they can't help but tell their friends).</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Fit check -->
+  <section class="section bg-slate-50">
+    <div class="section-narrow text-center">
+      <h2 class="text-2xl md:text-4xl font-extrabold mb-4">
+        Perfect For Aspiring Hypnotists Who:
+      </h2>
+      <p class="text-lg md:text-xl text-slate-700 leading-relaxed max-w-2xl mx-auto">
+        Want to build an asset that they can sell so they don't have to trade time for money — <strong>AND</strong> for those who want the power to create deep personal change in themselves, their family, and their clients.
+      </p>
+    </div>
+  </section>
+
+  <!-- Price story -->
+  <section class="section bg-white">
+    <div class="section-narrow">
+      <h2 class="text-2xl md:text-4xl font-extrabold text-center mb-6">
+        We Originally Planned To Sell These For <span class="text-pth-blue">$1,000</span>
+      </h2>
+      <div class="space-y-4 text-base md:text-lg leading-relaxed text-slate-700">
+        <p>That felt fair because it was a fraction of what Dan's one-on-one certification clients invest — they pay <strong>$10,000</strong> to have him personally train them to become Part-Time Hypnotists.</p>
+        <p>Dan has personally sold over <strong>seven figures</strong> of hypnosis audios over his career, so $1,000 for the same core system (minus the hand-holding) felt like a no-brainer.</p>
+        <p>But Dan didn't build this to be another cash-grab program. He built it so more people could actually get started helping hypnotists — and their clients — <strong>right now</strong>.</p>
+        <p>So you're not going to pay $10,000. You're not going to pay $1,000. You're not even going to pay $500 — even though all you'd have to do is close one new client to make it back.</p>
+        <p class="font-bold text-slate-900 text-lg md:text-xl">Instead, on this page only, you can get started for one payment of ${upsellAmount}.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Guarantee -->
+  <section class="section bg-slate-50">
+    <div class="section-narrow">
+      <div class="bg-white border-2 border-pth-green rounded-lg p-6 md:p-8 shadow-sm">
+        <p class="text-pth-green font-bold uppercase tracking-wide text-sm mb-2">🛡 Better-Than-Amazon Guarantee</p>
+        <h3 class="text-xl md:text-2xl font-extrabold mb-3">
+          You don't even have to say yes — you just have to say "maybe."
+        </h3>
+        <div class="space-y-3 text-base text-slate-700 leading-relaxed">
+          <p>Go through the program. If you don't find that you're able to create self-hypnosis audios you're confident you can charge for, we'll give you every penny back. No questions asked.</p>
+          <p>Dan will even eat the Stripe processing fees on the refund. Our refund rates are so low that we're not worried about this — and we know you're going to love what's inside.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Price reveal + CTA -->
+  <section class="section bg-white">
+    <div class="section-narrow text-center">
+      <p class="text-base md:text-lg font-bold uppercase tracking-wide text-slate-600 mb-2">
+        What Dan's 1-on-1 Clients Pay: <span class="line-through decoration-2">$10,000</span>
+      </p>
+      <p class="text-base md:text-lg font-bold uppercase tracking-wide text-slate-600">Your Price On This Page Only:</p>
+      <p class="text-6xl md:text-8xl font-extrabold text-pth-blue mt-2 mb-8">${upsellAmount}</p>
+
+      <button id="yes-btn" type="button"
+        class="w-full bg-pth-orange hover:bg-pth-orange-dark text-white font-extrabold uppercase tracking-wide text-lg md:text-xl px-6 py-5 rounded-md shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+        <span data-idle>Yes! I Want Instant Access For ${upsellAmount} →</span>
+        <span data-busy class="hidden">Charging Your Card…</span>
+      </button>
+      <p class="mt-3 text-sm text-slate-600">
+        One click — we'll charge the card you used a moment ago. No need to re-enter anything.
+      </p>
+
+      <a id="no-btn" href={`/downsell?order=${encodeURIComponent(orderToken)}${isPreview ? '&preview=1' : ''}`}
+        class="mt-8 block text-sm text-slate-500 underline underline-offset-4 hover:text-slate-700 max-w-prose mx-auto leading-relaxed">
+        No thanks Dan... I'll pass on your generous offer to take the EXACT self-hypnosis audios you've used in your practice (responsible for over 7 figures in sales) and try to create them on my own. I understand that once I leave this page I'll lose my lifetime discount, and if I ever want to purchase again in the future I'll pay the full price of $497.
+      </a>
+
+      <p id="err" class="hidden mt-4 text-sm text-pth-red" role="alert"></p>
+    </div>
+  </section>
+
+  <script is:inline define:vars={{ orderToken }}>
+  (function () {
+    const yes = document.getElementById('yes-btn');
+    const err = document.getElementById('err');
+    if (!yes) return;
+    yes.addEventListener('click', async () => {
+      err.classList.add('hidden'); err.textContent = '';
+      const idle = yes.querySelector('[data-idle]');
+      const busy = yes.querySelector('[data-busy]');
+      yes.disabled = true; idle.classList.add('hidden'); busy.classList.remove('hidden');
+      try {
+        const r = await fetch('/api/upsell', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_token: orderToken }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || `Upsell charge failed (${r.status})`);
+        window.location.href = `/thank-you?order=${encodeURIComponent(orderToken)}&upsell=1`;
+      } catch (e) {
+        err.textContent = e.message || 'Could not complete the charge. Try again or skip.';
+        err.classList.remove('hidden');
+        yes.disabled = false; idle.classList.remove('hidden'); busy.classList.add('hidden');
+      }
+    });
+  })();
+  </script>
+</BaseLayout>
