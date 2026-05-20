@@ -15,7 +15,7 @@ import path from 'node:path';
 export const prerender = false;
 
 const publishableKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_PLACEHOLDER_REPLACE_ME';
-const productAmountCents = Number(import.meta.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
+const productAmountCents = Number(process.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
 const productAmount = (productAmountCents / 100).toFixed(2);
 
 let html = readFileSync(path.join(process.cwd(), 'src/raw/checkout.html'), 'utf8');
@@ -65,6 +65,16 @@ const splice = `
     // Hide the original GHL payment form.
     ghlForm.style.display = 'none';
 
+    // Hide the duplicate "Contact & Shipping Information" section (name + email
+    // inputs) that sits above the payment form — our Stripe shell collects
+    // these fields itself, prefilled from URL params.
+    var infoSection = ghlForm.parentNode && ghlForm.parentNode.querySelector('section.info');
+    if (infoSection) infoSection.style.display = 'none';
+
+    // Hide the original "Payment" heading bar — our Stripe shell has its own.
+    var paymentTitle = ghlForm.parentNode && ghlForm.parentNode.querySelector('.payment-title-wrapp');
+    if (paymentTitle) paymentTitle.style.display = 'none';
+
     // Insert our Stripe form in its place.
     var tpl = document.getElementById('pth-stripe-template');
     if (!tpl) return false;
@@ -79,9 +89,29 @@ const splice = `
       if (qe) document.getElementById('pth-email').value = qe;
     } catch (_) {}
 
+    // Log the publishable key prefix so we can verify in DevTools what the
+    // built bundle actually has (real keys start with "pk_test_" or "pk_live_"
+    // followed by a long random string; the placeholder is the literal string
+    // "pk_test_PLACEHOLDER_REPLACE_ME").
+    try { console.log('[pth-checkout] Stripe publishable key prefix:', (PUBLISHABLE_KEY || '').slice(0, 12) + '…'); } catch (_) {}
+
     if (!window.Stripe) {
       document.getElementById('pth-pay-err').style.display = 'block';
       document.getElementById('pth-pay-err').textContent = 'Payment system failed to load. Please refresh.';
+      return true;
+    }
+
+    // Bail loudly if the build inlined the placeholder key (PUBLIC_STRIPE_PUBLISHABLE_KEY
+    // was empty at build time). Mounting card Elements with a placeholder produces
+    // a silently-empty iframe, which is what you'd otherwise see.
+    if (!PUBLISHABLE_KEY || PUBLISHABLE_KEY.indexOf('PLACEHOLDER') !== -1 || !/^pk_(test|live)_[A-Za-z0-9]{8,}/.test(PUBLISHABLE_KEY)) {
+      var errEl = document.getElementById('pth-pay-err');
+      errEl.style.display = 'block';
+      errEl.textContent = 'Stripe publishable key not configured. Set PUBLIC_STRIPE_PUBLISHABLE_KEY in Vercel and redeploy.';
+      var cardWrap = document.querySelector('#pth-stripe-shell .card-wrap');
+      if (cardWrap) cardWrap.style.display = 'none';
+      var payBtn = document.getElementById('pth-pay-btn');
+      if (payBtn) payBtn.disabled = true;
       return true;
     }
 
