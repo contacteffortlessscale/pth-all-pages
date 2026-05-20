@@ -20,3 +20,6 @@ Thumbs.db
 
 # Astro temp
 *.tsbuildinfo
+
+.vercel
+.env*.local

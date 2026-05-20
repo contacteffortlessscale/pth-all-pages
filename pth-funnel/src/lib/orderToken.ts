@@ -11,7 +11,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const SECRET =
-  import.meta.env.ORDER_TOKEN_SECRET ||
+  process.env.ORDER_TOKEN_SECRET ||
   'CHANGE_ME_INSECURE_DEFAULT_DO_NOT_USE_IN_PROD';
 
 const EXPIRY_MS = 1000 * 60 * 60; // 1 hour

@@ -12,7 +12,32 @@ export const prerender = false;
 const orderToken = Astro.url.searchParams.get('order') || '';
 const payload = orderToken ? verifyOrderToken(orderToken) : null;
 const isPreview = Astro.url.searchParams.get('preview') === '1'
-  && (import.meta.env.DEV || import.meta.env.ALLOW_PREVIEW_BYPASS === '1');
+  && (import.meta.env.DEV || process.env.ALLOW_PREVIEW_BYPASS === '1');
+
+// --- DEBUG: visit /upsell?debug=1 to see what the server actually sees.
+// Remove this branch once env-var wiring is confirmed.
+if (Astro.url.searchParams.get('debug') === '1') {
+  const raw = process.env.ALLOW_PREVIEW_BYPASS;
+  const debugPayload = {
+    'process.env.ALLOW_PREVIEW_BYPASS_raw': raw,
+    'process.env.ALLOW_PREVIEW_BYPASS_type': typeof raw,
+    'process.env.ALLOW_PREVIEW_BYPASS_equals_"1"': raw === '1',
+    'import.meta.env.DEV': import.meta.env.DEV,
+    'import.meta.env.PROD': import.meta.env.PROD,
+    'process.env.VERCEL_ENV': process.env.VERCEL_ENV,
+    'preview_query_param': Astro.url.searchParams.get('preview'),
+    'isPreview_would_be': Astro.url.searchParams.get('preview') === '1'
+      && (import.meta.env.DEV || process.env.ALLOW_PREVIEW_BYPASS === '1'),
+    'order_token_present': Boolean(orderToken),
+    'order_payload_valid': Boolean(payload),
+    'node_version': process.version,
+    'now_iso': new Date().toISOString(),
+  };
+  return new Response(JSON.stringify(debugPayload, null, 2), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
 
 if (!payload && !isPreview) {
   return Astro.redirect('/checkout');
@@ -98,46 +123,4 @@ const splice = `
       }
     }
     if (!wiredNo) {
-      var links = document.querySelectorAll('a, button, span, div');
-      for (var j = 0; j < links.length; j++) {
-        if (looksLikeNoThanksLink(links[j])) {
-          var lnk = links[j];
-          lnk.addEventListener('click', declineUpsell, true);
-          if (lnk.tagName.toLowerCase() === 'a') lnk.setAttribute('href', THANK_YOU);
-          wiredNo = true;
-          break;
-        }
-      }
-    }
-  }
-
-  function start() {
-    scan();
-    // SPA hydrates after initial DOM — keep watching for ~10s in case the
-    // buttons appear later.
-    var observer = new MutationObserver(scan);
-    observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(function () { observer.disconnect(); }, 10000);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
-})();
-</script>
-`;
-
-// Inject before </body>.
-if (html.indexOf('</body>') !== -1) {
-  html = html.replace('</body>', splice + '</body>');
-} else {
-  html += splice;
-}
-
-return new Response(html, {
-  status: 200,
-  headers: { 'Content-Type': 'text/html; charset=utf-8' },
-});
----
+      var links = docume
