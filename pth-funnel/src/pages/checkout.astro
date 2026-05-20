@@ -52,11 +52,47 @@ const splice = `
     <p class="micro">Your card details are sent directly to Stripe. We never see or store them.</p>
   </div>
 </template>
-<script src="https://js.stripe.com/v3/"></script>
 <script>
 (function () {
   var PUBLISHABLE_KEY = ${JSON.stringify(publishableKey)};
   var PRODUCT_AMOUNT  = ${JSON.stringify(productAmount)};
+
+  // GHL serves a proxied Stripe.js from /refs/checkout/v3 on its own domain.
+  // Stripe.js has a hard "must be loaded from js.stripe.com" guard that throws
+  // when the active instance came from anywhere else, and a "don't re-init if
+  // already loaded" guard that prevents a second <script src="js.stripe.com/v3/">
+  // from replacing the global. To get a clean Stripe instance we have to:
+  //   1. Remove the GHL-proxied script tag(s) from the DOM
+  //   2. Wipe Stripe globals
+  //   3. Then load the canonical js.stripe.com/v3/ ourselves
+  function ensureCleanStripe(done) {
+    if (window.Stripe && window.Stripe.__pthClean) { done(); return; }
+    var existing = document.querySelectorAll(
+      'script[src*="stripe.com/v3"], script[src*="/refs/checkout/v3"]'
+    );
+    for (var i = 0; i < existing.length; i++) {
+      try { existing[i].parentNode && existing[i].parentNode.removeChild(existing[i]); } catch (_) {}
+    }
+    try { delete window.Stripe; } catch (_) { window.Stripe = undefined; }
+    try { delete window.StripeM; } catch (_) {}
+
+    var s = document.createElement('script');
+    s.src = 'https://js.stripe.com/v3/';
+    s.async = true;
+    s.onload = function () {
+      if (!window.Stripe) {
+        console.error('[pth-checkout] Stripe.js loaded but window.Stripe is undefined');
+        return;
+      }
+      try { window.Stripe.__pthClean = true; } catch (_) {}
+      done();
+    };
+    s.onerror = function () {
+      var errEl = document.getElementById('pth-pay-err');
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Failed to load Stripe.js. Please refresh.'; }
+    };
+    document.head.appendChild(s);
+  }
 
   function init() {
     var ghlForm = document.querySelector('form.form-payment.order-form-v2');
@@ -95,12 +131,6 @@ const splice = `
     // "pk_test_PLACEHOLDER_REPLACE_ME").
     try { console.log('[pth-checkout] Stripe publishable key prefix:', (PUBLISHABLE_KEY || '').slice(0, 12) + '…'); } catch (_) {}
 
-    if (!window.Stripe) {
-      document.getElementById('pth-pay-err').style.display = 'block';
-      document.getElementById('pth-pay-err').textContent = 'Payment system failed to load. Please refresh.';
-      return true;
-    }
-
     // Bail loudly if the build inlined the placeholder key (PUBLIC_STRIPE_PUBLISHABLE_KEY
     // was empty at build time). Mounting card Elements with a placeholder produces
     // a silently-empty iframe, which is what you'd otherwise see.
@@ -115,58 +145,61 @@ const splice = `
       return true;
     }
 
-    var stripe = window.Stripe(PUBLISHABLE_KEY);
-    var elements = stripe.elements();
-    var card = elements.create('card', {
-      style: {
-        base: { color: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '16px', '::placeholder': { color: '#94a3b8' } },
-        invalid: { color: '#e93d3d', iconColor: '#e93d3d' },
-      },
-    });
-    card.mount('#pth-stripe-card');
+    // Load Stripe.js cleanly (kicking out GHL's proxied copy), then mount.
+    ensureCleanStripe(function () {
+      var stripe = window.Stripe(PUBLISHABLE_KEY);
+      var elements = stripe.elements();
+      var card = elements.create('card', {
+        style: {
+          base: { color: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '16px', '::placeholder': { color: '#94a3b8' } },
+          invalid: { color: '#e93d3d', iconColor: '#e93d3d' },
+        },
+      });
+      card.mount('#pth-stripe-card');
 
-    var btn = document.getElementById('pth-pay-btn');
-    var err = document.getElementById('pth-pay-err');
-    function setBusy(busy) {
-      btn.disabled = busy;
-      btn.querySelector('[data-idle]').style.display = busy ? 'none' : '';
-      btn.querySelector('[data-busy]').style.display = busy ? '' : 'none';
-    }
-
-    btn.addEventListener('click', function () {
-      err.style.display = 'none'; err.textContent = '';
-      var first_name = document.getElementById('pth-first-name').value.trim();
-      var email      = document.getElementById('pth-email').value.trim();
-      if (!first_name || !email) {
-        err.textContent = 'Please fill in your name and email.';
-        err.style.display = 'block';
-        return;
+      var btn = document.getElementById('pth-pay-btn');
+      var err = document.getElementById('pth-pay-err');
+      function setBusy(busy) {
+        btn.disabled = busy;
+        btn.querySelector('[data-idle]').style.display = busy ? 'none' : '';
+        btn.querySelector('[data-busy]').style.display = busy ? '' : 'none';
       }
-      setBusy(true);
-      stripe.createPaymentMethod({
-        type: 'card', card: card,
-        billing_details: { name: first_name, email: email },
-      }).then(function (pm) {
-        if (pm.error) throw new Error(pm.error.message || 'Card error');
-        return fetch('/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ first_name: first_name, email: email, payment_method_id: pm.paymentMethod.id }),
-        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); });
-      }).then(function (res) {
-        if (!res.ok) throw new Error((res.d && res.d.error) || 'Checkout failed');
-        if (res.d.requires_action && res.d.payment_intent_client_secret) {
-          return stripe.confirmCardPayment(res.d.payment_intent_client_secret).then(function (a) {
-            if (a.error) throw new Error(a.error.message || 'Card authentication failed');
-            window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
-          });
+
+      btn.addEventListener('click', function () {
+        err.style.display = 'none'; err.textContent = '';
+        var first_name = document.getElementById('pth-first-name').value.trim();
+        var email      = document.getElementById('pth-email').value.trim();
+        if (!first_name || !email) {
+          err.textContent = 'Please fill in your name and email.';
+          err.style.display = 'block';
+          return;
         }
-        if (!res.d.order_token) throw new Error('Server did not return an order token.');
-        window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
-      }).catch(function (e) {
-        err.textContent = e.message || 'Something went wrong. Please try again.';
-        err.style.display = 'block';
-        setBusy(false);
+        setBusy(true);
+        stripe.createPaymentMethod({
+          type: 'card', card: card,
+          billing_details: { name: first_name, email: email },
+        }).then(function (pm) {
+          if (pm.error) throw new Error(pm.error.message || 'Card error');
+          return fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ first_name: first_name, email: email, payment_method_id: pm.paymentMethod.id }),
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); });
+        }).then(function (res) {
+          if (!res.ok) throw new Error((res.d && res.d.error) || 'Checkout failed');
+          if (res.d.requires_action && res.d.payment_intent_client_secret) {
+            return stripe.confirmCardPayment(res.d.payment_intent_client_secret).then(function (a) {
+              if (a.error) throw new Error(a.error.message || 'Card authentication failed');
+              window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
+            });
+          }
+          if (!res.d.order_token) throw new Error('Server did not return an order token.');
+          window.location.href = '/upsell?order=' + encodeURIComponent(res.d.order_token);
+        }).catch(function (e) {
+          err.textContent = e.message || 'Something went wrong. Please try again.';
+          err.style.display = 'block';
+          setBusy(false);
+        });
       });
     });
 
