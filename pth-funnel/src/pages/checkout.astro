@@ -11,10 +11,16 @@
 // "Here's everything you're getting", footer) is the original verbatim.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { getStripeMode, getStripeKeys } from '../lib/stripeMode';
 
 export const prerender = false;
 
-const publishableKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_PLACEHOLDER_REPLACE_ME';
+// Resolve the active Stripe mode (live vs test) for THIS request, then pick
+// the publishable key that matches. The mode comes from Vercel KV (set via
+// /admin/stripe-mode) or the STRIPE_MODE env-var override.
+const { mode: stripeMode } = await getStripeMode();
+const keys = getStripeKeys(stripeMode);
+const publishableKey = keys.publishable || 'pk_test_PLACEHOLDER_REPLACE_ME';
 const productAmountCents = Number(process.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
 const productAmount = (productAmountCents / 100).toFixed(2);
 
@@ -56,6 +62,7 @@ const splice = `
 (function () {
   var PUBLISHABLE_KEY = ${JSON.stringify(publishableKey)};
   var PRODUCT_AMOUNT  = ${JSON.stringify(productAmount)};
+  var STRIPE_MODE     = ${JSON.stringify(stripeMode)};
 
   // GHL serves a proxied Stripe.js from /refs/checkout/v3 on its own domain.
   // Stripe.js has a hard "must be loaded from js.stripe.com" guard that throws
@@ -129,7 +136,19 @@ const splice = `
     // built bundle actually has (real keys start with "pk_test_" or "pk_live_"
     // followed by a long random string; the placeholder is the literal string
     // "pk_test_PLACEHOLDER_REPLACE_ME").
-    try { console.log('[pth-checkout] Stripe publishable key prefix:', (PUBLISHABLE_KEY || '').slice(0, 12) + '…'); } catch (_) {}
+    try { console.log('[pth-checkout] Stripe mode:', STRIPE_MODE, '| publishable key prefix:', (PUBLISHABLE_KEY || '').slice(0, 12) + '…'); } catch (_) {}
+
+    // Render a small banner at the top of our Stripe shell when in TEST mode,
+    // so it's impossible to confuse a real customer flow with a test one.
+    if (STRIPE_MODE === 'test') {
+      var shell = document.getElementById('pth-stripe-shell');
+      if (shell) {
+        var banner = document.createElement('div');
+        banner.style.cssText = 'margin: -12px 0 16px; padding: 8px 12px; background: #fef3c7; color: #78350f; border: 1px solid #f59e0b; border-radius: 6px; font-size: 12px; font-weight: 700; text-align: center; letter-spacing: 0.04em; text-transform: uppercase;';
+        banner.textContent = '⚠ Test mode — use 4242 4242 4242 4242';
+        shell.insertBefore(banner, shell.firstChild.nextSibling);
+      }
+    }
 
     // Bail loudly if the build inlined the placeholder key (PUBLIC_STRIPE_PUBLISHABLE_KEY
     // was empty at build time). Mounting card Elements with a placeholder produces

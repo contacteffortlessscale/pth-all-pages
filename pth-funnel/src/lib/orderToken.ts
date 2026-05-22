@@ -23,6 +23,9 @@ export interface OrderTokenPayload {
   firstName: string;
   mainOrderAmount: number; // cents, for the receipt summary
   iat: number;             // issued at, ms epoch
+  mode?: 'live' | 'test';  // which Stripe mode the customer was created in
+                           //   — optional for backward compat with old tokens
+                           //   (treated as 'live' if absent).
 }
 
 function b64urlEncode(buf: Buffer | string): string {

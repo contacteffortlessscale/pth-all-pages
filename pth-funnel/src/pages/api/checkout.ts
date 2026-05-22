@@ -13,22 +13,27 @@
 // will return a 500 with a clear message if the key is still a placeholder.
 
 import type { APIRoute } from 'astro';
-import { stripe, isStripeConfigured } from '../../lib/stripe';
+import { getStripe, isStripeConfigured } from '../../lib/stripe';
 import { createOrderToken } from '../../lib/orderToken';
 import { notifyGhl } from '../../lib/ghl';
+import { getStripeMode } from '../../lib/stripeMode';
 
 export const prerender = false;
 
-const PRODUCT_NAME = import.meta.env.PRODUCT_MAIN_NAME || 'The Part-Time Hypnotist';
-const PRODUCT_AMOUNT = Number(import.meta.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
+const PRODUCT_NAME = process.env.PRODUCT_MAIN_NAME || 'The Part-Time Hypnotist';
+const PRODUCT_AMOUNT = Number(process.env.PRODUCT_MAIN_AMOUNT_CENTS || 1495);
 
 export const POST: APIRoute = async ({ request }) => {
-  if (!isStripeConfigured()) {
+  const { mode } = await getStripeMode();
+  const stripe = getStripe(mode);
+
+  if (!isStripeConfigured(mode)) {
     return json(
       {
         error:
-          'Stripe is not configured yet. Replace the placeholder STRIPE_SECRET_KEY ' +
-          '(and PUBLIC_STRIPE_PUBLISHABLE_KEY) in the Vercel project env, then redeploy.',
+          mode === 'test'
+            ? 'Stripe TEST keys are not configured. Set STRIPE_TEST_SECRET_KEY and STRIPE_TEST_PUBLISHABLE_KEY in Vercel, then redeploy.'
+            : 'Stripe LIVE keys are not configured. Set STRIPE_SECRET_KEY and PUBLIC_STRIPE_PUBLISHABLE_KEY in Vercel, then redeploy.',
       },
       500
     );
@@ -108,13 +113,16 @@ export const POST: APIRoute = async ({ request }) => {
     }).catch(() => undefined);
 
     // 5. Issue a signed order token carrying the customer + payment method ID
-    //    so the upsell page can do a one-click off-session charge.
+    //    so the upsell page can do a one-click off-session charge. Mode is
+    //    embedded so /api/upsell + /api/downsell always use the same Stripe
+    //    instance the customer was created in.
     const order_token = createOrderToken({
       cid: customer.id,
       pmid: payment_method_id,
       email,
       firstName: first_name,
       mainOrderAmount: PRODUCT_AMOUNT,
+      mode,
     });
 
     return json({ ok: true, order_token });

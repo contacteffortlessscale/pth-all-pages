@@ -16,12 +16,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (!first_name || !email) return json({ error: 'first_name and email are required' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Invalid email address' }, 400);
 
-  const webhookUrl = import.meta.env.GHL_WEBHOOK_URL;
+  const webhookUrl = process.env.GHL_WEBHOOK_URL;
   if (!webhookUrl || webhookUrl.includes('REPLACE_ME')) {
     return json({ error: 'GHL_WEBHOOK_URL not configured on server' }, 500);
   }
 
-  const tag = import.meta.env.GHL_OPTIN_TAG || 'pth-sales-page-optin';
+  const tag = process.env.GHL_OPTIN_TAG || 'pth-sales-page-optin';
 
   try {
     const r = await fetch(webhookUrl, {

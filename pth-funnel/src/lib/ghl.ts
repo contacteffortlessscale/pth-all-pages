@@ -5,11 +5,16 @@
 
 export type GhlEvent = 'buyer' | 'upsell' | 'downsell';
 
-const URLS: Record<GhlEvent, string | undefined> = {
-  buyer: import.meta.env.GHL_BUYER_WEBHOOK_URL,
-  upsell: import.meta.env.GHL_UPSELL_WEBHOOK_URL,
-  downsell: import.meta.env.GHL_DOWNSELL_WEBHOOK_URL,
-};
+function urlFor(event: GhlEvent): string | undefined {
+  switch (event) {
+    case 'buyer':
+      return process.env.GHL_BUYER_WEBHOOK_URL;
+    case 'upsell':
+      return process.env.GHL_UPSELL_WEBHOOK_URL;
+    case 'downsell':
+      return process.env.GHL_DOWNSELL_WEBHOOK_URL;
+  }
+}
 
 export interface GhlPurchasePayload {
   email: string;
@@ -27,7 +32,7 @@ export interface GhlPurchasePayload {
  * whether to retry on its own.
  */
 export async function notifyGhl(event: GhlEvent, payload: GhlPurchasePayload): Promise<{ ok: boolean; error?: string }> {
-  const url = URLS[event];
+  const url = urlFor(event);
   if (!url || url.includes('REPLACE_ME')) {
     console.warn(`[ghl] ${event} webhook URL not configured — skipping`);
     return { ok: false, error: 'webhook URL not configured' };

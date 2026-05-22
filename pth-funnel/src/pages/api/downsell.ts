@@ -1,24 +1,27 @@
 // POST /api/downsell — off-session one-click charge for the downsell product.
 import type { APIRoute } from 'astro';
-import { stripe, isStripeConfigured } from '../../lib/stripe';
+import { getStripe, isStripeConfigured } from '../../lib/stripe';
 import { verifyOrderToken } from '../../lib/orderToken';
 import { notifyGhl } from '../../lib/ghl';
+import type { StripeMode } from '../../lib/stripeMode';
 
 export const prerender = false;
 
-const DOWNSELL_NAME = import.meta.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
-const DOWNSELL_AMOUNT = Number(import.meta.env.PRODUCT_DOWNSELL_AMOUNT_CENTS || 2700);
+const DOWNSELL_NAME = process.env.PRODUCT_DOWNSELL_NAME || 'Live Client Recordings';
+const DOWNSELL_AMOUNT = Number(process.env.PRODUCT_DOWNSELL_AMOUNT_CENTS || 2700);
 
 export const POST: APIRoute = async ({ request }) => {
-  if (!isStripeConfigured()) {
-    return json({ error: 'Stripe is not configured — replace the placeholder keys.' }, 500);
-  }
-
   let body: { order_token?: string };
   try { body = await request.json(); } catch { return json({ error: 'Invalid JSON body' }, 400); }
 
   const payload = verifyOrderToken(body.order_token || '');
   if (!payload) return json({ error: 'Invalid or expired order token' }, 401);
+
+  const mode: StripeMode = payload.mode === 'test' ? 'test' : 'live';
+  if (!isStripeConfigured(mode)) {
+    return json({ error: `Stripe ${mode.toUpperCase()} keys are not configured.` }, 500);
+  }
+  const stripe = getStripe(mode);
 
   try {
     const intent = await stripe.paymentIntents.create({

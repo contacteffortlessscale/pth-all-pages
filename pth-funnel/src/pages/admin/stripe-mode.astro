@@ -1,0 +1,296 @@
+---
+// /admin/stripe-mode — restricted admin page to flip Stripe between live and
+// test mode for the whole site.
+//
+// Auth: email allowlist (ADMIN_EMAILS env) + 6-digit OTP delivered via the
+// configured GHL Inbound Webhook (ADMIN_OTP_WEBHOOK_URL). On success, a
+// signed 24h session cookie is set and the mode toggle becomes available.
+//
+// State: the mode itself is stored in Vercel KV (see src/lib/stripeMode.ts).
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionCookie,
+  getAdminEmails,
+} from '../../lib/adminAuth';
+import { getStripeMode } from '../../lib/stripeMode';
+import { isStripeConfigured } from '../../lib/stripe';
+
+export const prerender = false;
+
+const sessionCookie = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value || '';
+const session = sessionCookie ? verifyAdminSessionCookie(sessionCookie) : null;
+const loggedIn = Boolean(session);
+
+const { mode: currentMode, source: modeSource, meta: modeMeta } = await getStripeMode({ bypassCache: true });
+const liveOk = isStripeConfigured('live');
+const testOk = isStripeConfigured('test');
+const adminEmails = getAdminEmails();
+const allowlistEmpty = adminEmails.length === 0;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Stripe mode · Admin</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+      .card { max-width: 480px; width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 32px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+      h1 { margin: 0 0 4px; font-size: 22px; }
+      .sub { margin: 0 0 24px; color: #94a3b8; font-size: 14px; }
+      .field { margin-bottom: 16px; }
+      label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 6px; }
+      input[type=email], input[type=text] { width: 100%; padding: 12px 14px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: #e2e8f0; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+      input[type=text].otp { letter-spacing: 0.5em; font-family: ui-monospace, monospace; text-align: center; font-size: 22px; padding: 14px; }
+      input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.25); }
+      button.primary, button.secondary { width: 100%; padding: 14px 16px; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; font-family: inherit; transition: opacity 120ms, background 120ms; }
+      button.primary { background: #3b82f6; color: #fff; }
+      button.primary:hover { background: #2563eb; }
+      button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      button.secondary { background: transparent; color: #94a3b8; border: 1px solid #334155; margin-top: 8px; }
+      button.secondary:hover { color: #e2e8f0; border-color: #475569; }
+      .msg { padding: 12px 14px; border-radius: 6px; font-size: 14px; margin-bottom: 16px; display: none; }
+      .msg.error { background: #4c1d24; color: #fecaca; display: block; }
+      .msg.info { background: #1e3a4c; color: #bae6fd; display: block; }
+      .msg.warn { background: #4c3a1d; color: #fde68a; display: block; }
+      .mode-card { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+      .mode-card.live { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4); }
+      .mode-card.test { background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.4); }
+      .mode-label { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
+      .mode-value { font-size: 22px; font-weight: 800; text-transform: uppercase; }
+      .mode-value.live { color: #4ade80; }
+      .mode-value.test { color: #facc15; }
+      .toggle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .toggle-row button { padding: 16px; }
+      button.live-btn { background: #16a34a; color: #fff; }
+      button.live-btn.active { background: #166534; cursor: default; opacity: 0.6; }
+      button.test-btn { background: #ca8a04; color: #fff; }
+      button.test-btn.active { background: #854d0e; cursor: default; opacity: 0.6; }
+      .meta { font-size: 12px; color: #64748b; margin-top: 16px; }
+      .meta code { background: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #94a3b8; }
+      .step { display: none; }
+      .step.active { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Stripe mode</h1>
+      <p class="sub">Switch the whole site between live and test Stripe keys.</p>
+
+      {allowlistEmpty && (
+        <div class="msg warn" style="display: block;">
+          <strong>Setup required:</strong> Set <code>ADMIN_EMAILS</code> in Vercel
+          (comma-separated) before this page accepts logins.
+        </div>
+      )}
+
+      {loggedIn ? (
+        <div class="step active" id="step-mode" data-current-mode={currentMode} data-mode-source={modeSource}>
+          <div class={`mode-card ${currentMode}`}>
+            <div>
+              <div class="mode-label">Current mode</div>
+              <div class={`mode-value ${currentMode}`}>{currentMode}</div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b;">
+              <div>source:</div>
+              <div><strong>{modeSource}</strong></div>
+            </div>
+          </div>
+
+          {modeSource === 'env' && (
+            <div class="msg warn" style="display: block;">
+              <code>STRIPE_MODE</code> env var is set — the toggle below is disabled.
+              Unset it in Vercel to use the live toggle.
+            </div>
+          )}
+
+          {modeSource === 'default' && (
+            <div class="msg info" style="display: block;">
+              Vercel KV is not connected yet, so mode falls back to <strong>live</strong>.
+              Connect a KV store in the Vercel Storage tab to enable the toggle.
+            </div>
+          )}
+
+          <div id="toggle-msg" class="msg"></div>
+
+          <div class="toggle-row">
+            <button
+              type="button"
+              class={`live-btn ${currentMode === 'live' ? 'active' : ''}`}
+              id="btn-live"
+              disabled={modeSource === 'env' || (currentMode === 'live')}
+            >
+              {currentMode === 'live' ? '● LIVE' : 'Switch to LIVE'}
+            </button>
+            <button
+              type="button"
+              class={`test-btn ${currentMode === 'test' ? 'active' : ''}`}
+              id="btn-test"
+              disabled={modeSource === 'env' || (currentMode === 'test') || !testOk}
+              title={!testOk ? 'Set STRIPE_TEST_SECRET_KEY and STRIPE_TEST_PUBLISHABLE_KEY in Vercel first' : ''}
+            >
+              {currentMode === 'test' ? '● TEST' : 'Switch to TEST'}
+            </button>
+          </div>
+
+          <div class="meta">
+            Live keys configured: <strong style={liveOk ? 'color:#4ade80' : 'color:#fca5a5'}>{liveOk ? 'yes' : 'no'}</strong>
+            &nbsp;·&nbsp;
+            Test keys configured: <strong style={testOk ? 'color:#4ade80' : 'color:#fca5a5'}>{testOk ? 'yes' : 'no'}</strong>
+            {modeMeta && (
+              <div style="margin-top: 6px;">
+                Last changed: <code>{modeMeta.changedAt}</code> by <code>{modeMeta.changedBy}</code>
+              </div>
+            )}
+            <div style="margin-top: 6px;">Signed in as <code>{session!.email}</code></div>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div id="step-email" class="step active">
+            <div id="email-msg" class="msg"></div>
+            <div class="field">
+              <label for="admin-email">Admin email</label>
+              <input type="email" id="admin-email" autocomplete="email" placeholder="you@example.com" required />
+            </div>
+            <button type="button" class="primary" id="btn-send-otp">Email me a code</button>
+          </div>
+
+          <div id="step-otp" class="step">
+            <div id="otp-msg" class="msg"></div>
+            <div class="field">
+              <label for="otp-code">Enter the 6-digit code</label>
+              <input type="text" id="otp-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" class="otp" autocomplete="one-time-code" />
+            </div>
+            <button type="button" class="primary" id="btn-verify-otp">Verify</button>
+            <button type="button" class="secondary" id="btn-back-to-email">Use a different email</button>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <script is:inline>
+      (function () {
+        var emailInput = document.getElementById('admin-email');
+        var otpInput   = document.getElementById('otp-code');
+        var stepEmail  = document.getElementById('step-email');
+        var stepOtp    = document.getElementById('step-otp');
+        var emailMsg   = document.getElementById('email-msg');
+        var otpMsg     = document.getElementById('otp-msg');
+        var btnSend    = document.getElementById('btn-send-otp');
+        var btnVerify  = document.getElementById('btn-verify-otp');
+        var btnBack    = document.getElementById('btn-back-to-email');
+        var btnLive    = document.getElementById('btn-live');
+        var btnTest    = document.getElementById('btn-test');
+        var toggleMsg  = document.getElementById('toggle-msg');
+
+        function showMsg(el, kind, text) {
+          if (!el) return;
+          el.className = 'msg ' + kind;
+          el.textContent = text;
+          el.style.display = 'block';
+        }
+        function clearMsg(el) {
+          if (!el) return;
+          el.className = 'msg';
+          el.textContent = '';
+          el.style.display = 'none';
+        }
+
+        if (btnSend) {
+          btnSend.addEventListener('click', function () {
+            clearMsg(emailMsg);
+            var email = (emailInput.value || '').trim();
+            if (!email) { showMsg(emailMsg, 'error', 'Please enter your email.'); return; }
+            btnSend.disabled = true;
+            btnSend.textContent = 'Sending…';
+            fetch('/api/admin/request-otp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email }),
+            })
+              .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+              .then(function (res) {
+                if (!res.ok) {
+                  showMsg(emailMsg, 'error', (res.d && res.d.error) || 'Request failed.');
+                  return;
+                }
+                stepEmail.classList.remove('active');
+                stepOtp.classList.add('active');
+                showMsg(otpMsg, 'info', (res.d && res.d.message) || 'Code sent. Check your email.');
+                setTimeout(function () { otpInput && otpInput.focus(); }, 50);
+              })
+              .catch(function (e) { showMsg(emailMsg, 'error', e.message || 'Network error.'); })
+              .finally(function () { btnSend.disabled = false; btnSend.textContent = 'Email me a code'; });
+          });
+        }
+
+        if (btnVerify) {
+          btnVerify.addEventListener('click', function () {
+            clearMsg(otpMsg);
+            var otp = (otpInput.value || '').trim();
+            if (!/^\d{6}$/.test(otp)) { showMsg(otpMsg, 'error', 'Please enter the 6-digit code.'); return; }
+            btnVerify.disabled = true;
+            btnVerify.textContent = 'Verifying…';
+            fetch('/api/admin/verify-otp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ otp: otp }),
+            })
+              .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+              .then(function (res) {
+                if (!res.ok) {
+                  showMsg(otpMsg, 'error', (res.d && res.d.error) || 'Verification failed.');
+                  return;
+                }
+                // Reload to render the logged-in view.
+                window.location.reload();
+              })
+              .catch(function (e) { showMsg(otpMsg, 'error', e.message || 'Network error.'); })
+              .finally(function () { btnVerify.disabled = false; btnVerify.textContent = 'Verify'; });
+          });
+        }
+
+        if (btnBack) {
+          btnBack.addEventListener('click', function () {
+            stepOtp.classList.remove('active');
+            stepEmail.classList.add('active');
+            clearMsg(otpMsg); clearMsg(emailMsg);
+            otpInput.value = '';
+            setTimeout(function () { emailInput && emailInput.focus(); }, 50);
+          });
+        }
+
+        function setMode(mode, btn) {
+          clearMsg(toggleMsg);
+          if (btnLive) btnLive.disabled = true;
+          if (btnTest) btnTest.disabled = true;
+          var origText = btn.textContent;
+          btn.textContent = 'Switching…';
+          fetch('/api/admin/stripe-mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: mode }),
+          })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              if (!res.ok) {
+                showMsg(toggleMsg, 'error', (res.d && res.d.error) || 'Could not switch mode.');
+                btn.textContent = origText;
+                return;
+              }
+              showMsg(toggleMsg, 'info', 'Now in ' + (res.d && res.d.mode).toUpperCase() + ' mode. Reloading…');
+              setTimeout(function () { window.location.reload(); }, 800);
+            })
+            .catch(function (e) { showMsg(toggleMsg, 'error', e.message || 'Network error.'); btn.textContent = origText; });
+        }
+
+        if (btnLive) btnLive.addEventListener('click', function () { if (!btnLive.disabled) setMode('live', btnLive); });
+        if (btnTest) btnTest.addEventListener('click', function () { if (!btnTest.disabled) setMode('test', btnTest); });
+      })();
+    </script>
+  </body>
+</html>
